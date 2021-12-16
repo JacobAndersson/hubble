@@ -1,3 +1,4 @@
 /target
 *.sw[op]
-lichess_elite.pgn
+*.pgn
+stockfish
