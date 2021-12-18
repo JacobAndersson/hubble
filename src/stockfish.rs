@@ -1,4 +1,4 @@
-use std::io::{Write, Read};
+use std::io::{Write, Read, BufRead};
 use std::process::{Command, Stdio, Child, ChildStdout, ChildStdin};
 
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub struct Scores {
 
 pub struct Stockfish {
     engine: Child,
-    stdout: ChildStdout,
+    stdout: Box<dyn BufRead>,
     stdin: ChildStdin
 }
 
@@ -20,26 +20,28 @@ impl Stockfish {
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn().unwrap();
-        let stdout = engine.stdout.take().unwrap();
-        let stdin = engine.stdin.take().unwrap();
 
-        Ok(Self { 
+        let temp = engine.stdout.take().unwrap();
+        let stdin = engine.stdin.take().unwrap();
+        let stdout = std::io::BufReader::new(temp);
+
+        Ok(Self {
             engine,
-            stdout, 
+            stdout: Box::new(stdout),
             stdin
         })
     }
     
     pub fn read_output(&mut self, min_length: Option<usize>) -> String {
+        let mut last_line = String::from("");
         loop {
             let mut buffer = [0; 3920];
-            self.stdout.read(&mut buffer[..]);
+            let count  = self.stdout.by_ref().read(&mut buffer[..]).unwrap();
             let output_string = String::from_utf8(buffer.to_vec()).unwrap();
-            let count = buffer.iter().filter(|&n| n != &0).count();
 
-            if count >= min_length.unwrap_or(0) {
+            if output_string.contains("info depth 20") && output_string.contains("score cp") {
                 return output_string;
-            } 
+            }
         }
     }
 
@@ -56,34 +58,34 @@ impl Stockfish {
         }
     }
 
-    fn parse_eval(&self, output: String) -> Scores {
-        let lines = output
-            .trim_matches(char::from(0))
-            .split("\n")
-            .filter(|x| x.len() > 1)
-            .collect::<Vec<&str>>(); 
-
-        let length = lines.len();
-        let evals = &lines[length - 3..];
-
-        let mut scores: Vec<Option<f32>> = Vec::new();
-        for eval in evals {
-            scores.push(self.parse_score(eval));
-        }
-
-
-        Scores {
-            classic: scores[0],
-            nnue: scores[1],
-            combined: scores[2]
+    fn parse_eval(&self, output: String) -> Option<f32> {
+        let words = output.split(" ").collect::<Vec<&str>>();
+        match words.iter().position(|x| x == &"cp") {
+            Some(idx) => {
+                match words[idx + 1].parse::<f32>() {
+                    Ok(s) => Some(s),
+                    Err(_) => None
+                }
+            },
+            None => None
         }
     }
 
-    pub fn eval_fen(&mut self, fen: &str) -> Scores {
-        let input_string = format!("position fen {}\n eval \n", fen);
-        self.stdin.write(input_string.as_bytes());
+    fn is_ready(&mut self) {
+        writeln!(self.stdin, "isready");
+        let out = self.read_output(None);
+        println!("ready {}", out);
+    }
+
+    pub fn eval_fen(&mut self, fen: &str) -> Option<f32> {
+        //self.is_ready(); 
+        writeln!(self.stdin, "position fen {}\n go depth {}", fen, 20);
+
         let output = self.read_output(Some(3000));
-        self.parse_eval(output)
+        println!("{}", output);
+        let score = self.parse_eval(output);
+        println!("{:?}", &score);
+        score
     }
 
     pub fn flush(&mut self) {

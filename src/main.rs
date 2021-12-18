@@ -4,6 +4,7 @@ mod opening_tree;
 use stockfish::{Stockfish, Scores};
 use opening_tree::parse_common_moves;
 
+use std::{thread, time};
 use pgn_reader::{Visitor, Skip, BufferedReader, RawHeader, SanPlus};
 use shakmaty::{CastlingMode, Chess, Position, fen, uci::Uci, Move};
 use shakmaty::fen::Fen;
@@ -14,7 +15,7 @@ use std::fs::File;
 struct GameAnalyser {
     engine: Stockfish,
     current_id: String, //current Game id
-    scores: Vec<Scores>,
+    scores: Vec<Option<f32>>,
     success: bool,
     pos: Chess
 }
@@ -34,8 +35,7 @@ impl GameAnalyser {
     fn analyse_position(&mut self) {
         let fen = fen::epd(&self.pos);
         let score = self.engine.eval_fen(&fen);
-        println!("{:?}", score.combined);
-        //self.scores.push(score);
+        self.scores.push(score);
     }
 }
 
