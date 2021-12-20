@@ -1,4 +1,6 @@
-/target
+target
 *.sw[op]
-*.pgn
-stockfish
+hubble_backend/*.pgn
+hubble_backend/stockfish
+node_modules
+package-lock.json
