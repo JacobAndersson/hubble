@@ -1,8 +1,7 @@
-use reqwest;
-use pgn_reader::BufferedReader;
 use crate::analyser::GameAnalyser;
-use serde::{Serialize, Deserialize};
-
+use pgn_reader::BufferedReader;
+use reqwest;
+use serde::{Deserialize, Serialize};
 
 const API_BASE: &str = "https://lichess.org";
 
@@ -15,14 +14,14 @@ pub async fn get_game(id: &str) -> Result<String, reqwest::Error> {
 pub enum AnalysisErrors {
     Lichess,
     Pgn,
-    NotFound
+    NotFound,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Game {
     white: String,
     black: String,
-    scores: Vec<f32>
+    scores: Vec<f32>,
 }
 
 pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
@@ -31,9 +30,9 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
             return Err(AnalysisErrors::NotFound);
         }
 
-        let mut reader = BufferedReader::new_cursor(&pgn[..]); 
+        let mut reader = BufferedReader::new_cursor(&pgn[..]);
         let mut analyser = GameAnalyser::new();
-        
+
         match reader.read_game(&mut analyser) {
             Err(_) => return Err(AnalysisErrors::Pgn),
             _ => {}
@@ -48,7 +47,7 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
         Ok(Game {
             scores,
             black: analyser.black,
-            white: analyser.white
+            white: analyser.white,
         })
     } else {
         return Err(AnalysisErrors::Lichess);

@@ -1,25 +1,27 @@
-use std::io::{Write, Read, BufRead};
-use std::process::{Command, Stdio, Child, ChildStdin};
+use std::io::{BufRead, Read, Write};
+use std::process::{Child, ChildStdin, Command, Stdio};
 
 #[derive(Debug)]
 pub struct Scores {
     pub classic: Option<f32>,
     pub nnue: Option<f32>,
-    pub combined: Option<f32>
+    pub combined: Option<f32>,
 }
 
 pub struct Stockfish {
     engine: Child,
     stdout: Box<dyn BufRead>,
-    stdin: ChildStdin
+    stdin: ChildStdin,
 }
 
 impl Stockfish {
     pub fn new() -> Result<Self, ()> {
-        let mut engine = Command::new("./stockfish").stdin(Stdio::piped())
+        let mut engine = Command::new("./stockfish")
+            .stdin(Stdio::piped())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn().unwrap();
+            .spawn()
+            .unwrap();
 
         let temp = engine.stdout.take().unwrap();
         let stdin = engine.stdin.take().unwrap();
@@ -28,10 +30,10 @@ impl Stockfish {
         Ok(Self {
             engine,
             stdout: Box::new(stdout),
-            stdin
+            stdin,
         })
     }
-    
+
     pub fn read_output(&mut self) -> String {
         loop {
             let mut buffer = [0; 3920];
@@ -44,28 +46,26 @@ impl Stockfish {
     }
 
     fn parse_score(&self, eval: &str) -> Option<f32> {
-       let words =  eval.split(" ").filter(|x| x.len() > 0).collect::<Vec<&str>>();
-       let raw_score = &words[2] 
-           .replace("+", "")
-           .replace("-", "")
-           .parse::<f32>();
+        let words = eval
+            .split(" ")
+            .filter(|x| x.len() > 0)
+            .collect::<Vec<&str>>();
+        let raw_score = &words[2].replace("+", "").replace("-", "").parse::<f32>();
 
         match raw_score {
             Ok(score) => Some(*score),
-            Err(_) => None
+            Err(_) => None,
         }
     }
 
     fn parse_eval(&self, output: String) -> Option<f32> {
         let words = output.split(" ").collect::<Vec<&str>>();
         match words.iter().position(|x| x == &"cp") {
-            Some(idx) => {
-                match words[idx + 1].parse::<f32>() {
-                    Ok(s) => Some(s),
-                    Err(_) => None
-                }
+            Some(idx) => match words[idx + 1].parse::<f32>() {
+                Ok(s) => Some(s),
+                Err(_) => None,
             },
-            None => None
+            None => None,
         }
     }
 

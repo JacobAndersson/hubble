@@ -1,11 +1,11 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io;
-use std::collections::HashMap;
 
-use shakmaty::{CastlingMode, Chess, Position, fen, uci::Uci, Move};
 use shakmaty::fen::Fen;
+use shakmaty::{fen, uci::Uci, CastlingMode, Chess, Move, Position};
 
-use pgn_reader::{Visitor, Skip, BufferedReader, RawHeader, SanPlus};
+use pgn_reader::{BufferedReader, RawHeader, SanPlus, Skip, Visitor};
 
 fn insert_move(moves: &mut Vec<MoveEntry>, mv: &str) {
     let mut found = false;
@@ -18,9 +18,11 @@ fn insert_move(moves: &mut Vec<MoveEntry>, mv: &str) {
     }
 
     if !found {
-        moves.push(MoveEntry { mv: mv.to_string(), n: 1});
+        moves.push(MoveEntry {
+            mv: mv.to_string(),
+            n: 1,
+        });
     }
-
 }
 
 fn find_most_popular(moves: &[MoveEntry]) -> String {
@@ -39,30 +41,36 @@ fn find_most_popular(moves: &[MoveEntry]) -> String {
 #[derive(Debug)]
 struct MoveEntry {
     mv: String,
-    n: usize
+    n: usize,
 }
 
 struct OpeningTree {
     games: usize,
     pos: Chess,
     success: bool,
-    move_stat: HashMap<String, Vec<MoveEntry>>
+    move_stat: HashMap<String, Vec<MoveEntry>>,
 }
 
 impl OpeningTree {
     fn new() -> Self {
-        Self { games: 0, pos: Chess::default(), success: true, move_stat: HashMap::new()}
+        Self {
+            games: 0,
+            pos: Chess::default(),
+            success: true,
+            move_stat: HashMap::new(),
+        }
     }
 
     fn count_position(&mut self, mv: &Move) {
         let fen = fen::epd(&self.pos);
         let uci = mv.to_uci(CastlingMode::Standard);
         match self.move_stat.get_mut(&fen) {
-            Some(entries) => {
-                insert_move(entries, &format!("{}", uci))
-            },
+            Some(entries) => insert_move(entries, &format!("{}", uci)),
             None => {
-                let entry = vec![MoveEntry{mv: uci.to_string(), n: 1}];
+                let entry = vec![MoveEntry {
+                    mv: uci.to_string(),
+                    n: 1,
+                }];
                 self.move_stat.insert(fen, entry);
             }
         };
@@ -84,19 +92,25 @@ impl Visitor for OpeningTree {
             let fen = match Fen::from_ascii(value.as_bytes()) {
                 Ok(fen) => fen,
                 Err(err) => {
-                    eprintln!("invalid fen header in game {}: {} ({:?})", self.games, err, value);
+                    eprintln!(
+                        "invalid fen header in game {}: {} ({:?})",
+                        self.games, err, value
+                    );
                     self.success = false;
                     return;
-                },
+                }
             };
 
             self.pos = match fen.position(CastlingMode::Chess960) {
                 Ok(pos) => pos,
                 Err(err) => {
-                    eprintln!("illegal fen header in game {}: {} ({})", self.games, err, fen);
+                    eprintln!(
+                        "illegal fen header in game {}: {} ({})",
+                        self.games, err, fen
+                    );
                     self.success = false;
                     return;
-                },
+                }
             };
         }
     }
@@ -115,11 +129,11 @@ impl Visitor for OpeningTree {
                 Ok(m) => {
                     self.count_position(&m);
                     self.pos.play_unchecked(&m)
-                },
+                }
                 Err(err) => {
                     eprintln!("error in game {}: {} {}", self.games, err, san_plus);
                     self.success = false;
-                },
+                }
             }
         }
     }
@@ -140,7 +154,7 @@ pub fn parse_common_moves() -> io::Result<()> {
         success &= ok;
     }
 
-    let stats = validator.move_stat;  
+    let stats = validator.move_stat;
     let mut pos = Chess::default();
 
     for _ in 0..80 {
@@ -151,7 +165,7 @@ pub fn parse_common_moves() -> io::Result<()> {
                 let m: Uci = most_popular.parse().unwrap();
                 println!("{}", m);
                 pos.play_unchecked(&m.to_move(&pos).unwrap());
-            },
+            }
             None => {
                 break;
             }

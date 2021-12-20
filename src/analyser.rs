@@ -1,8 +1,8 @@
-use pgn_reader::{Visitor, Skip, BufferedReader, RawHeader, SanPlus};
-use shakmaty::{CastlingMode, Chess, Position, fen};
+use pgn_reader::{BufferedReader, RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
-use std::io;
+use shakmaty::{fen, CastlingMode, Chess, Position};
 use std::fs::File;
+use std::io;
 
 use crate::Stockfish;
 
@@ -13,7 +13,7 @@ pub struct GameAnalyser {
     success: bool,
     pos: Chess,
     pub black: String,
-    pub white: String
+    pub white: String,
 }
 
 impl GameAnalyser {
@@ -57,7 +57,7 @@ impl Visitor for GameAnalyser {
                 Err(_err) => {
                     self.success = false;
                     return;
-                },
+                }
             };
 
             self.pos = match fen.position(CastlingMode::Chess960) {
@@ -65,7 +65,7 @@ impl Visitor for GameAnalyser {
                 Err(_err) => {
                     self.success = false;
                     return;
-                },
+                }
             };
         } else if key == b"White" {
             self.white = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
@@ -89,11 +89,11 @@ impl Visitor for GameAnalyser {
                     self.pos.play_unchecked(&m);
                     println!("{}", &m);
                     self.analyse_position();
-                },
+                }
                 Err(err) => {
                     //eprintln!("error in game {}: {} {}", self.games, err, san_plus);
                     self.success = false;
-                },
+                }
             }
         }
     }
@@ -104,7 +104,7 @@ impl Visitor for GameAnalyser {
     }
 }
 
-pub fn play_through_match() -> io::Result<()>{
+pub fn play_through_match() -> io::Result<()> {
     let mut success = true;
     let file = File::open("test2.pgn")?;
     let mut reader = BufferedReader::new(file);
