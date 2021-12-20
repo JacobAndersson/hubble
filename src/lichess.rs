@@ -2,7 +2,6 @@ use crate::analyser::GameAnalyser;
 use crate::opening_tree::{MoveEntry, OpeningTree};
 
 use pgn_reader::BufferedReader;
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -45,10 +44,10 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
         let mut reader = BufferedReader::new_cursor(&pgn[..]);
         let mut analyser = GameAnalyser::new();
 
-        match reader.read_game(&mut analyser) {
-            Err(_) => return Err(AnalysisErrors::Pgn),
-            _ => {}
+        if reader.read_game(&mut analyser).is_err() {
+            return Err(AnalysisErrors::Pgn);
         }
+
         let game = &analyser.scores;
 
         if game.contains(&None) {
@@ -58,11 +57,11 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
 
         Ok(Game {
             scores,
-            black: analyser.black,
-            white: analyser.white,
+            black: analyser.black.clone(),
+            white: analyser.white.clone(),
         })
     } else {
-        return Err(AnalysisErrors::Lichess);
+        Err(AnalysisErrors::Lichess)
     }
 }
 
@@ -73,7 +72,8 @@ pub async fn opening_player(
         let mut reader = BufferedReader::new_cursor(&pgn[..]);
         let mut opening = OpeningTree::new();
 
-        while let res = reader.read_game(&mut opening) {
+        loop {
+            let res = reader.read_game(&mut opening);
             match res {
                 Err(_) => return Err(AnalysisErrors::Pgn),
                 Ok(None) => break,

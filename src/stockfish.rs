@@ -47,8 +47,8 @@ impl Stockfish {
 
     fn parse_score(&self, eval: &str) -> Option<f32> {
         let words = eval
-            .split(" ")
-            .filter(|x| x.len() > 0)
+            .split(' ')
+            .filter(|x| !x.is_empty())
             .collect::<Vec<&str>>();
         let raw_score = &words[2].replace("+", "").replace("-", "").parse::<f32>();
 
@@ -59,7 +59,7 @@ impl Stockfish {
     }
 
     fn parse_eval(&self, output: String) -> Option<f32> {
-        let words = output.split(" ").collect::<Vec<&str>>();
+        let words = output.split(' ').collect::<Vec<&str>>();
         match words.iter().position(|x| x == &"cp") {
             Some(idx) => match words[idx + 1].parse::<f32>() {
                 Ok(s) => Some(s),
@@ -69,19 +69,26 @@ impl Stockfish {
         }
     }
 
-    fn is_ready(&mut self) {
+    #[allow(dead_code)]
+    fn is_ready(&mut self) -> bool {
         writeln!(self.stdin, "isready");
         let out = self.read_output();
+        out == "readyok"
     }
 
     pub fn eval_fen(&mut self, fen: &str) -> Option<f32> {
         writeln!(self.stdin, "position fen {}\ngo depth {}\n", fen, 20).unwrap();
         let output = self.read_output();
-        let score = self.parse_eval(output);
-        score
+        self.parse_eval(output)
     }
 
+    #[allow(dead_code)]
     pub fn flush(&mut self) {
         self.read_output();
+    }
+
+    #[allow(dead_code)]
+    pub fn kill(mut self) {
+        self.engine.kill();
     }
 }

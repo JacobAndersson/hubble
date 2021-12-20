@@ -1,8 +1,6 @@
-use pgn_reader::{BufferedReader, RawHeader, SanPlus, Skip, Visitor};
+use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
-use std::fs::File;
-use std::io;
 
 use crate::stockfish::Stockfish;
 
@@ -90,7 +88,7 @@ impl Visitor for GameAnalyser {
                     println!("{}", &m);
                     self.analyse_position();
                 }
-                Err(err) => {
+                Err(_err) => {
                     //eprintln!("error in game {}: {} {}", self.games, err, san_plus);
                     self.success = false;
                 }
@@ -99,21 +97,6 @@ impl Visitor for GameAnalyser {
     }
 
     fn end_game(&mut self) -> Self::Result {
-        //self.success
         false
     }
-}
-
-pub fn play_through_match() -> io::Result<()> {
-    let mut success = true;
-    let file = File::open("test2.pgn")?;
-    let mut reader = BufferedReader::new(file);
-
-    let mut validator = GameAnalyser::new();
-    while let Some(ok) = reader.read_game(&mut validator)? {
-        success &= ok;
-        let game = &validator.scores;
-    }
-
-    Ok(())
 }

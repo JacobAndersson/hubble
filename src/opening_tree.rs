@@ -27,6 +27,7 @@ fn insert_move(moves: &mut Vec<MoveEntry>, mv: &str) {
     }
 }
 
+#[allow(dead_code)]
 fn find_most_popular(moves: &[MoveEntry]) -> String {
     let mut n_max = 0;
     let mut pop = "e2e4";

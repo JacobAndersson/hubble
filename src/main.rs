@@ -7,10 +7,8 @@ mod stockfish;
 extern crate rocket;
 use crate::opening_tree::MoveEntry;
 
-use crate::lichess::{AnalysisErrors, Game};
+use crate::lichess::AnalysisErrors;
 use rocket::http::Status;
-use rocket::response::status;
-use serde;
 
 use std::collections::HashMap;
 
