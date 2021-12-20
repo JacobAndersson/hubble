@@ -1,6 +1,8 @@
 use reqwest;
 use pgn_reader::BufferedReader;
 use crate::analyser::GameAnalyser;
+use serde::{Serialize, Deserialize};
+
 
 const API_BASE: &str = "https://lichess.org";
 
@@ -12,10 +14,11 @@ pub async fn get_game(id: &str) -> Result<String, reqwest::Error> {
 #[derive(Debug)]
 pub enum AnalysisErrors {
     Lichess,
-    Pgn
+    Pgn,
+    NotFound
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Game {
     white: String,
     black: String,
@@ -24,6 +27,10 @@ pub struct Game {
 
 pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
     if let Ok(pgn) = get_game(id).await {
+        if pgn.contains("<!DOCTYPE html>") {
+            return Err(AnalysisErrors::NotFound);
+        }
+
         let mut reader = BufferedReader::new_cursor(&pgn[..]); 
         let mut analyser = GameAnalyser::new();
         

@@ -459,6 +459,8 @@ dependencies = [
  "pgn-reader",
  "reqwest",
  "rocket",
+ "serde",
+ "serde_json",
  "shakmaty",
  "tokio",
 ]
