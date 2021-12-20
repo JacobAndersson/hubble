@@ -1,5 +1,5 @@
 use std::io::{Write, Read, BufRead};
-use std::process::{Command, Stdio, Child, ChildStdout, ChildStdin};
+use std::process::{Command, Stdio, Child, ChildStdin};
 
 #[derive(Debug)]
 pub struct Scores {
@@ -32,13 +32,11 @@ impl Stockfish {
         })
     }
     
-    pub fn read_output(&mut self, min_length: Option<usize>) -> String {
-        let mut last_line = String::from("");
+    pub fn read_output(&mut self) -> String {
         loop {
             let mut buffer = [0; 3920];
-            let count  = self.stdout.by_ref().read(&mut buffer[..]).unwrap();
+            self.stdout.read(&mut buffer);
             let output_string = String::from_utf8(buffer.to_vec()).unwrap();
-
             if output_string.contains("info depth 20") && output_string.contains("score cp") {
                 return output_string;
             }
@@ -73,22 +71,17 @@ impl Stockfish {
 
     fn is_ready(&mut self) {
         writeln!(self.stdin, "isready");
-        let out = self.read_output(None);
-        println!("ready {}", out);
+        let out = self.read_output();
     }
 
     pub fn eval_fen(&mut self, fen: &str) -> Option<f32> {
-        //self.is_ready(); 
-        writeln!(self.stdin, "position fen {}\n go depth {}", fen, 20);
-
-        let output = self.read_output(Some(3000));
-        println!("{}", output);
+        writeln!(self.stdin, "position fen {}\ngo depth {}\n", fen, 20).unwrap();
+        let output = self.read_output();
         let score = self.parse_eval(output);
-        println!("{:?}", &score);
         score
     }
 
     pub fn flush(&mut self) {
-        self.read_output(None);
+        self.read_output();
     }
 }
