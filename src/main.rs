@@ -5,13 +5,14 @@ mod stockfish;
 
 #[macro_use]
 extern crate rocket;
-use opening_tree::parse_common_moves;
-use stockfish::Stockfish;
+use crate::opening_tree::MoveEntry;
 
 use crate::lichess::{AnalysisErrors, Game};
 use rocket::http::Status;
 use rocket::response::status;
 use serde;
+
+use std::collections::HashMap;
 
 #[get("/analyse/<id>")]
 async fn analyse(id: &str) -> Result<String, Status> {
@@ -27,7 +28,21 @@ async fn analyse(id: &str) -> Result<String, Status> {
     }
 }
 
+#[get("/opening/<player>")]
+async fn opening(player: &str) -> Result<String, Status> {
+    let res: Result<HashMap<String, Vec<MoveEntry>>, AnalysisErrors> =
+        lichess::opening_player(player).await;
+
+    match res {
+        Ok(opening) => match serde_json::to_string(&opening) {
+            Ok(s) => Ok(s),
+            Err(_) => Err(Status::InternalServerError),
+        },
+        Err(_) => Err(Status::InternalServerError),
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![analyse])
+    rocket::build().mount("/", routes![analyse, opening])
 }

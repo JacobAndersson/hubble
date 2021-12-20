@@ -7,6 +7,8 @@ use shakmaty::{fen, uci::Uci, CastlingMode, Chess, Move, Position};
 
 use pgn_reader::{BufferedReader, RawHeader, SanPlus, Skip, Visitor};
 
+use serde::Serialize;
+
 fn insert_move(moves: &mut Vec<MoveEntry>, mv: &str) {
     let mut found = false;
 
@@ -38,21 +40,21 @@ fn find_most_popular(moves: &[MoveEntry]) -> String {
     pop.to_string()
 }
 
-#[derive(Debug)]
-struct MoveEntry {
+#[derive(Debug, Serialize)]
+pub struct MoveEntry {
     mv: String,
     n: usize,
 }
 
-struct OpeningTree {
+pub struct OpeningTree {
     games: usize,
     pos: Chess,
     success: bool,
-    move_stat: HashMap<String, Vec<MoveEntry>>,
+    pub move_stat: HashMap<String, Vec<MoveEntry>>,
 }
 
 impl OpeningTree {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             games: 0,
             pos: Chess::default(),
@@ -154,6 +156,10 @@ pub fn parse_common_moves() -> io::Result<()> {
         success &= ok;
     }
 
+    if !success {
+        ::std::process::exit(1);
+    }
+
     let stats = validator.move_stat;
     let mut pos = Chess::default();
 
@@ -170,10 +176,6 @@ pub fn parse_common_moves() -> io::Result<()> {
                 break;
             }
         }
-    }
-
-    if !success {
-        ::std::process::exit(1);
     }
 
     Ok(())

@@ -4,7 +4,7 @@ use shakmaty::{fen, CastlingMode, Chess, Position};
 use std::fs::File;
 use std::io;
 
-use crate::Stockfish;
+use crate::stockfish::Stockfish;
 
 pub struct GameAnalyser {
     engine: Stockfish,
