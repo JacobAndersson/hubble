@@ -35,36 +35,39 @@ export default function Analysis({ gameId }) {
   const [dataset, setDataset] = useState({});
 
   useEffect(() => {
-    let { newWhite, newBlack, newScores } = getScores();
-    setWhite(newWhite);
-    setBlack(newBlack);
+    getScores().then( ({ newWhite, newBlack, newScores }) => {
+      setWhite(newWhite);
+      setBlack(newBlack);
 
-    setDataset({
-      labels: newScores.map((_, i)=> i),
-      datasets: [{
-        label: "Score",
-        data: newScores,
-      }]
-    });
+      setDataset({
+        labels: newScores.map((_, i)=> `move ${i}`),
+        datasets: [{
+          label: "Score",
+          data: newScores,
+          tension: 0.3,
+        }]
+      });
+    })
   }, [gameId])
 
   function getScores() {
-    return {
-          newWhite: "jrti",
-          newBlack: "Pavel1511",
-          newScores: [ 
-            -25, 40, 0, 845, -15, 22, -36, 27, 72, 62, 46,
-            58, 33, 54, 55, -63, -55, -47, -35, -72, -50, 107,
-            99, 90, 99, 111, -93, 99, -98, 160, -150, 148, -150,
-            250, 242, 234, 221, 203, 217, 220, -152, -160, -152,
-            -154, 150, 159, 165, -170, 210 
-          ]
-    };
+    return new Promise((resolve, reject) => {
+        resolve({
+            newWhite: "jrti",
+            newBlack: "Pavel1511",
+            newScores: [ 
+              -25, 40, 0, 845, -15, 22, -36, 27, 72, 62, 46,
+              58, 33, 54, 55, -63, -55, -47, -35, -72, -50, 107,
+              99, 90, 99, 111, -93, 99, -98, 160, -150, 148, -150,
+              250, 242, 234, 221, 203, 217, 220, -152, -160, -152,
+              -154, 150, 159, 165, -170, 210 
+            ]
+        })
+    });
     /*
-    axios.get(`/api/analyse/${gameId}`).then(res => {
+    return axios.get(`/api/analyse/${gameId}`).then(res => {
       const { white: newWhite, black: newBlack, scores: newScores } = res?.data
       return { newWhite, newBlack, newScores };
-      
     });
     */
   }
@@ -104,7 +107,7 @@ export default function Analysis({ gameId }) {
   if (Object.keys(dataset).length === 0){
     return (
       <div>
-        <p> WAIT </p>
+        <p>WAIT</p>
       </div>
     );
   } else {
