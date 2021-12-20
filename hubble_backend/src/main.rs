@@ -42,5 +42,5 @@ async fn opening(player: &str) -> Result<String, Status> {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![analyse, opening])
+    rocket::build().mount("/api", routes![analyse, opening])
 }

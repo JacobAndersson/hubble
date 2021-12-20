@@ -30,7 +30,6 @@ impl GameAnalyser {
     fn analyse_position(&mut self) {
         let fen = fen::epd(&self.pos);
         let score = self.engine.eval_fen(&fen);
-        println!("{:?}", &score);
         self.scores.push(score);
     }
 }
@@ -85,7 +84,6 @@ impl Visitor for GameAnalyser {
             match san_plus.san.to_move(&self.pos) {
                 Ok(m) => {
                     self.pos.play_unchecked(&m);
-                    println!("{}", &m);
                     self.analyse_position();
                 }
                 Err(_err) => {
