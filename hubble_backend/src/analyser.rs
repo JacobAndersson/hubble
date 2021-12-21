@@ -27,6 +27,7 @@ pub struct GameAnalyser {
     pos: Chess,
     pub black: Player,
     pub white: Player,
+    pub moves: Vec<String>
 }
 
 impl GameAnalyser {
@@ -39,6 +40,7 @@ impl GameAnalyser {
             pos: Chess::default(),
             black: Player::empty(),
             white: Player::empty(),
+            moves: Vec::new()
         }
     }
 
@@ -59,6 +61,7 @@ impl Visitor for GameAnalyser {
         self.black = Player::empty();
         self.white = Player::empty();
         self.pos = Chess::default();
+        self.moves = Vec::new();
     }
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
@@ -125,6 +128,7 @@ impl Visitor for GameAnalyser {
                     self.success = false;
                 }
             }
+            self.moves.push(san_plus.to_string());
         }
     }
 

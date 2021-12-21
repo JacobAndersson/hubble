@@ -1,7 +1,9 @@
 .container {
   display: flex;
+  flex-direction: column;
 }
 
 .chartContainer {
   width: 60rem;
+  height: 10rem;
 }

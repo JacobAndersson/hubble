@@ -33,6 +33,7 @@ pub struct Game {
     white: Player,
     black: Player,
     scores: Vec<f32>,
+    moves: Vec<String>
 }
 
 pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
@@ -49,6 +50,7 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
         }
 
         let game = &analyser.scores;
+        let moves = analyser.moves.to_vec();
 
         if game.contains(&None) {
             return Err(AnalysisErrors::Pgn);
@@ -57,6 +59,7 @@ pub async fn analyse_lichess_game(id: &str) -> Result<Game, AnalysisErrors> {
 
         Ok(Game {
             scores,
+            moves,
             black: analyser.black.clone(),
             white: analyser.white.clone(),
         })
