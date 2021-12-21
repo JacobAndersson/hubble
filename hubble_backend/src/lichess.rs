@@ -1,8 +1,8 @@
-use crate::analyser::GameAnalyser;
+use crate::analyser::{GameAnalyser, Player};
 use crate::opening_tree::{MoveEntry, OpeningTree};
 
 use pgn_reader::BufferedReader;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 
 const API_BASE: &str = "https://lichess.org";
@@ -28,10 +28,10 @@ pub enum AnalysisErrors {
     NotFound,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct Game {
-    white: String,
-    black: String,
+    white: Player,
+    black: Player,
     scores: Vec<f32>,
 }
 

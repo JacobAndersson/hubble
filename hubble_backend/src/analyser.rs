@@ -1,8 +1,23 @@
 use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
-
 use crate::stockfish::Stockfish;
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Player {
+    pub name: String,
+    pub rating: u32
+}
+
+impl Player {
+    fn empty() -> Self {
+        Self {
+            name: "".to_string(),
+            rating: 0
+        }
+    }
+}
 
 pub struct GameAnalyser {
     engine: Stockfish,
@@ -10,8 +25,8 @@ pub struct GameAnalyser {
     pub scores: Vec<Option<f32>>,
     success: bool,
     pos: Chess,
-    pub black: String,
-    pub white: String,
+    pub black: Player,
+    pub white: Player,
 }
 
 impl GameAnalyser {
@@ -22,8 +37,8 @@ impl GameAnalyser {
             scores: Vec::new(),
             success: true,
             pos: Chess::default(),
-            black: String::from(""),
-            white: String::from(""),
+            black: Player::empty(),
+            white: Player::empty(),
         }
     }
 
@@ -41,33 +56,52 @@ impl Visitor for GameAnalyser {
         self.current_id = "".to_string();
         self.success = true;
         self.scores = Vec::new();
-        self.black = "".to_string();
-        self.white = "".to_string();
+        self.black = Player::empty();
+        self.white = Player::empty();
         self.pos = Chess::default();
     }
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
         // Support games from a non-standard starting position.
-        if key == b"FEN" {
-            let fen = match Fen::from_ascii(value.as_bytes()) {
-                Ok(fen) => fen,
-                Err(_err) => {
-                    self.success = false;
-                    return;
-                }
-            };
+        match key {
+            b"FEN" => {
+                let fen = match Fen::from_ascii(value.as_bytes()) {
+                    Ok(fen) => fen,
+                    Err(_err) => {
+                        self.success = false;
+                        return;
+                    }
+                };
 
-            self.pos = match fen.position(CastlingMode::Chess960) {
-                Ok(pos) => pos,
-                Err(_err) => {
-                    self.success = false;
-                    return;
+                self.pos = match fen.position(CastlingMode::Chess960) {
+                    Ok(pos) => pos,
+                    Err(_err) => {
+                        self.success = false;
+                        return;
+                    }
+                };
+            },
+            b"White" => {
+                self.white.name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+            },
+            b"Black" => {
+                self.black.name  = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+            },
+            b"WhiteElo" => {
+                if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
+                    if let Ok(rating) = vs.to_string().parse::<u32>() {
+                        self.white.rating = rating;
+                    }
                 }
-            };
-        } else if key == b"White" {
-            self.white = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
-        } else if key == b"Black" {
-            self.black = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+            },
+            b"BlackElo" => {
+                if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
+                    if let Ok(rating) = vs.to_string().parse::<u32>() {
+                        self.black.rating = rating;
+                    }
+                }
+            },
+            _ => {}
         }
     }
 

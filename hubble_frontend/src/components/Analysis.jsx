@@ -51,6 +51,7 @@ export default function Analysis({ gameId }) {
   }, [gameId])
 
   function getScores() {
+    /*
     return new Promise((resolve, reject) => {
         resolve({
             newWhite: "jrti",
@@ -64,12 +65,11 @@ export default function Analysis({ gameId }) {
             ]
         })
     });
-    /*
+    */
     return axios.get(`/api/analyse/${gameId}`).then(res => {
       const { white: newWhite, black: newBlack, scores: newScores } = res?.data
       return { newWhite, newBlack, newScores };
     });
-    */
   }
 
   function safeGameMutate(modify) {
@@ -114,9 +114,9 @@ export default function Analysis({ gameId }) {
     return (
       <div className={styles.container}>
         <div>
-          <p>{black}</p>
+          <p>{`${black.name}-${black.rating}`}</p>
           <Chessboard position={game.fen()} onPieceDrop={onDrop} />
-          <p>{white}</p>
+          <p>{`${white.name}-${white.rating}`}</p>
         </div>
         <div className = {styles.chartContainer}>
           <Line
