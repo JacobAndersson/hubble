@@ -2,6 +2,13 @@ mod analyser;
 mod lichess;
 mod opening_tree;
 mod stockfish;
+mod player;
+mod models;
+mod schema;
+
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 
 #[macro_use]
 extern crate rocket;

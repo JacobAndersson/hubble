@@ -1,23 +1,9 @@
 use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
+
 use crate::stockfish::Stockfish;
-use serde::Serialize;
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Player {
-    pub name: String,
-    pub rating: u32
-}
-
-impl Player {
-    fn empty() -> Self {
-        Self {
-            name: "".to_string(),
-            rating: 0
-        }
-    }
-}
+use crate::player::Player;
 
 pub struct GameAnalyser {
     engine: Stockfish,

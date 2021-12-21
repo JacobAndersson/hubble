@@ -1,4 +1,5 @@
-use crate::analyser::{GameAnalyser, Player};
+use crate::analyser::GameAnalyser;
+use crate::player::Player;
 use crate::opening_tree::{MoveEntry, OpeningTree};
 
 use pgn_reader::BufferedReader;
