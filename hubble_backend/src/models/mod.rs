@@ -1,5 +1,5 @@
-mod matches;
+mod game;
 mod user;
 
 pub use user::User;
-//pub use matches::Match;
+pub use game::Game;

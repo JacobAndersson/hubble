@@ -4,8 +4,10 @@ use shakmaty::{fen, CastlingMode, Chess, Position};
 
 use crate::stockfish::Stockfish;
 use crate::player::Player;
+use crate::models::Game;
 
 pub struct GameAnalyser {
+    player_id: String,
     engine: Stockfish,
     current_id: String, //current Game id
     pub scores: Vec<Option<f32>>,
@@ -13,12 +15,14 @@ pub struct GameAnalyser {
     pos: Chess,
     pub black: Player,
     pub white: Player,
-    pub moves: Vec<String>
+    pub moves: Vec<String>,
+    pub game: Game
 }
 
 impl GameAnalyser {
-    pub fn new() -> Self {
+    pub fn new(player_id: String) -> Self {
         Self {
+            player_id,
             engine: Stockfish::new().unwrap(),
             current_id: String::from(""),
             scores: Vec::new(),
@@ -26,7 +30,8 @@ impl GameAnalyser {
             pos: Chess::default(),
             black: Player::empty(),
             white: Player::empty(),
-            moves: Vec::new()
+            moves: Vec::new(),
+            game: Game::empty(),
         }
     }
 
@@ -48,10 +53,12 @@ impl Visitor for GameAnalyser {
         self.white = Player::empty();
         self.pos = Chess::default();
         self.moves = Vec::new();
+        self.game = Game::empty();
     }
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
         // Support games from a non-standard starting position.
+        println!("{:?}", String::from_utf8(key.to_vec()));
         match key {
             b"FEN" => {
                 let fen = match Fen::from_ascii(value.as_bytes()) {
@@ -71,23 +78,40 @@ impl Visitor for GameAnalyser {
                 };
             },
             b"White" => {
-                self.white.name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+                let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+                self.game.white = name;
+                //self.white.name = name;
             },
             b"Black" => {
-                self.black.name  = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+                let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
+                //self.black.name = name;
+                self.game.black = name;
             },
             b"WhiteElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
-                    if let Ok(rating) = vs.to_string().parse::<u32>() {
-                        self.white.rating = rating;
+                    if let Ok(rating) = vs.to_string().parse::<i32>() {
+                        //self.white.rating = rating;
+                        self.game.white_rating= Some(rating);
                     }
                 }
             },
             b"BlackElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
-                    if let Ok(rating) = vs.to_string().parse::<u32>() {
-                        self.black.rating = rating;
+                    if let Ok(rating) = vs.to_string().parse::<i32>() {
+                        //self.black.rating = rating;
+                        self.game.black_rating = Some(rating);
                     }
+                }
+            },
+            b"LichessURL" => {
+                if let Ok(url) = std::str::from_utf8(value.as_bytes()) {
+                    let id = String::from(url.split('/').nth(2).unwrap());
+                    self.game.id = id;
+                } 
+            },
+            b"ECO" => {
+                if let Ok(opening) = std::str::from_utf8(value.as_bytes()) {
+                    self.game.opening_id = Some(opening.to_string());
                 }
             },
             _ => {}

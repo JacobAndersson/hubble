@@ -1,14 +1,14 @@
 table! {
-    matches (id) {
+    games (id) {
         id -> Varchar,
-        player_id -> Varchar,
-        opening_id -> Varchar,
+        opening_id -> Nullable<Varchar>,
         moves -> Jsonb,
         scores -> Jsonb,
-        winner -> Varchar,
-        player_rating -> Nullable<Int4>,
-        oponnent_rating -> Nullable<Int4>,
-        is_white -> Bool,
+        white -> Varchar,
+        black -> Varchar,
+        white_rating -> Nullable<Int4>,
+        black_rating -> Nullable<Int4>,
+        winner -> Nullable<Varchar>,
     }
 }
 
@@ -20,6 +20,6 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
-    matches,
+    games,
     users,
 );

@@ -5,15 +5,17 @@ CREATE TABLE users (
   UNIQUE(id)
 );
 
-CREATE TABLE matches (
+CREATE TABLE games (
   id VARCHAR NOT NULL PRIMARY KEY,
-  player_id VARCHAR NOT NULL,
-  opening_id VARCHAR NOT NULL,
+  opening_id VARCHAR,
   moves JSONB NOT NULL,
   scores JSONB NOT NULL,
-  winner VARCHAR NOT NULL,
-  player_rating INTEGER,
-  oponnent_rating INTEGER,
-  is_white BOOLEAN NOT NULL,
+
+  white VARCHAR NOT NULL,
+  black VARCHAR NOT NULL,
+  white_rating INTEGER,
+  black_rating INTEGER,
+
+  winner VARCHAR,
   UNIQUE(id)
 );

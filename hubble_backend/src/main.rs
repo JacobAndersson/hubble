@@ -33,6 +33,12 @@ async fn analyse(id: &str) -> Result<String, Status> {
     }
 }
 
+#[get("/analyse/player/<player>")]
+async fn analyse_player(player: &str) -> &str{
+    lichess::analyse_player(player).await;
+    return "TESTING";
+}
+
 #[get("/opening/<player>")]
 async fn opening(player: &str) -> Result<String, Status> {
     let res: Result<HashMap<String, Vec<MoveEntry>>, AnalysisErrors> =
@@ -49,5 +55,5 @@ async fn opening(player: &str) -> Result<String, Status> {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/api", routes![analyse, opening])
+    rocket::build().mount("/api", routes![analyse, opening, analyse_player])
 }
