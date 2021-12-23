@@ -100,7 +100,9 @@ fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<GameModel> {
 
     while let Some(ok) = reader.read_game(analyser).unwrap() {
        //game over
-       matches.push(analyser.game.clone());
+       let game = analyser.game.clone();
+       println!("{:?}", &game);
+       matches.push(game);
     }
 
     matches
@@ -117,15 +119,13 @@ pub async fn analyse_player(player_id: &str) {
     loop {
         match stream.next().await {
             Some(Ok(chunk)) => {
-                pgns.push_str(&format!("{}\n", std::str::from_utf8(chunk)));
+                pgns.push_str(&format!("{}\n", std::str::from_utf8(&chunk).unwrap()));
                 pgn_count += 1;
 
-                if pgn_count < 10 {
+                if pgn_count < 2 {
                     continue;
                 }
 
-                println!("ANALYSIS STARTING");
-                println!("{}", pgns);
                 let mut analyser = GameAnalyser::new("".to_string());
                 let games = analyse_games(pgns, &mut analyser);
                 println!("{:?}", games);

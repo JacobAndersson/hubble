@@ -6,6 +6,7 @@ use crate::stockfish::Stockfish;
 use crate::player::Player;
 use crate::models::Game;
 
+
 pub struct GameAnalyser {
     player_id: String,
     engine: Stockfish,
@@ -37,8 +38,13 @@ impl GameAnalyser {
 
     fn analyse_position(&mut self) {
         let fen = fen::epd(&self.pos);
-        let score = self.engine.eval_fen(&fen);
-        self.scores.push(score);
+        match self.engine.eval_fen(&fen) {
+            Some(score) => {
+                self.game.scores.push(score.to_string());
+            },
+            None => {} //handle fail
+
+        }
     }
 }
 
@@ -58,7 +64,6 @@ impl Visitor for GameAnalyser {
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
         // Support games from a non-standard starting position.
-        println!("{:?}", String::from_utf8(key.to_vec()));
         match key {
             b"FEN" => {
                 let fen = match Fen::from_ascii(value.as_bytes()) {
@@ -114,6 +119,15 @@ impl Visitor for GameAnalyser {
                     self.game.opening_id = Some(opening.to_string());
                 }
             },
+            b"Result" => {
+                if let Ok(result_string) = std::str::from_utf8(value.as_bytes()) {
+                    self.game.winner = match result_string {
+                        "1-0" => Some(self.game.white.clone()),
+                        "0-1" => Some(self.game.black.clone()),
+                        "1/2-1/2" | _ => None,
+                    };
+                }
+            }
             _ => {}
         }
     }
@@ -131,10 +145,12 @@ impl Visitor for GameAnalyser {
             match san_plus.san.to_move(&self.pos) {
                 Ok(m) => {
                     self.pos.play_unchecked(&m);
+                    println!("{:?}", &m);
+                    let uci = m.to_uci(self.pos.castles().mode()).to_string();
+                    self.game.moves.push(uci);
                     self.analyse_position();
                 }
                 Err(_err) => {
-                    //eprintln!("error in game {}: {} {}", self.games, err, san_plus);
                     self.success = false;
                 }
             }
