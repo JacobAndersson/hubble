@@ -2,10 +2,9 @@ use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
 
-use crate::stockfish::Stockfish;
-use crate::player::Player;
 use crate::models::game::Game;
-
+use crate::player::Player;
+use crate::stockfish::Stockfish;
 
 pub struct GameAnalyser {
     player_id: String,
@@ -17,7 +16,7 @@ pub struct GameAnalyser {
     pub black: Player,
     pub white: Player,
     pub moves: Vec<String>,
-    pub game: Game
+    pub game: Game,
 }
 
 impl GameAnalyser {
@@ -41,9 +40,8 @@ impl GameAnalyser {
         match self.engine.eval_fen(&fen) {
             Some(score) => {
                 self.game.scores.push(score.to_string());
-            },
+            }
             None => {} //handle fail
-
         }
     }
 }
@@ -80,25 +78,25 @@ impl Visitor for GameAnalyser {
                         return;
                     }
                 };
-            },
+            }
             b"White" => {
                 let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
                 self.game.white = name;
                 //self.white.name = name;
-            },
+            }
             b"Black" => {
                 let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
                 //self.black.name = name;
                 self.game.black = name;
-            },
+            }
             b"WhiteElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
                     if let Ok(rating) = vs.to_string().parse::<i32>() {
                         //self.white.rating = rating;
-                        self.game.white_rating= Some(rating);
+                        self.game.white_rating = Some(rating);
                     }
                 }
-            },
+            }
             b"BlackElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
                     if let Ok(rating) = vs.to_string().parse::<i32>() {
@@ -106,18 +104,18 @@ impl Visitor for GameAnalyser {
                         self.game.black_rating = Some(rating);
                     }
                 }
-            },
-            b"LichessURL" | b"Site"=> {
+            }
+            b"LichessURL" | b"Site" => {
                 if let Ok(url) = std::str::from_utf8(value.as_bytes()) {
                     let id = String::from(url.split('/').nth(3).unwrap());
                     self.game.id = id;
-                } 
-            },
+                }
+            }
             b"ECO" => {
                 if let Ok(opening) = std::str::from_utf8(value.as_bytes()) {
                     self.game.opening_id = Some(opening.to_string());
                 }
-            },
+            }
             b"Result" => {
                 if let Ok(result_string) = std::str::from_utf8(value.as_bytes()) {
                     self.game.winner = match result_string {

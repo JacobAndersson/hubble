@@ -1,14 +1,14 @@
 use crate::analyser::GameAnalyser;
-use crate::player::Player;
-use crate::opening_tree::{MoveEntry, OpeningTree};
 use crate::db::PgPooledConnection;
+use crate::opening_tree::{MoveEntry, OpeningTree};
+use crate::player::Player;
 
+use futures_util::StreamExt;
 use pgn_reader::BufferedReader;
 use serde::Serialize;
 use std::collections::HashMap;
-use futures_util::StreamExt;
 
-use crate::models::game::{Game, save_games, save_game, get_game};
+use crate::models::game::{get_game, save_game, save_games, Game};
 
 const API_BASE: &str = "https://lichess.org";
 
@@ -33,8 +33,11 @@ pub enum AnalysisErrors {
     NotFound,
 }
 
-pub async fn analyse_lichess_game(conn: PgPooledConnection, game_id: &str) -> Result<Game, AnalysisErrors> {
-    if let Some(game) = get_game(game_id, &conn){
+pub async fn analyse_lichess_game(
+    conn: PgPooledConnection,
+    game_id: &str,
+) -> Result<Game, AnalysisErrors> {
+    if let Some(game) = get_game(game_id, &conn) {
         return Ok(game);
     }
 
@@ -52,7 +55,7 @@ pub async fn analyse_lichess_game(conn: PgPooledConnection, game_id: &str) -> Re
 
         match save_game(analyser.game, &conn) {
             Ok(g) => Ok(g),
-            Err(_) => Err(AnalysisErrors::Lichess)
+            Err(_) => Err(AnalysisErrors::Lichess),
         }
     } else {
         Err(AnalysisErrors::Lichess)
@@ -86,17 +89,20 @@ fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
     let mut matches: Vec<Game> = Vec::new();
 
     while let Some(ok) = reader.read_game(analyser).unwrap() {
-       //game over
-       let game = analyser.game.clone();
-       println!("{:?}", &game);
-       matches.push(game);
+        //game over
+        let game = analyser.game.clone();
+        println!("{:?}", &game);
+        matches.push(game);
     }
 
     matches
 }
 
 pub async fn analyse_player(conn: PgPooledConnection, player_id: &str) {
-    let url = format!("{}/api/games/user/{}?max=100&clocks=false&evals=false", API_BASE, player_id);
+    let url = format!(
+        "{}/api/games/user/{}?max=100&clocks=false&evals=false",
+        API_BASE, player_id
+    );
     let mut stream = reqwest::get(url).await.unwrap().bytes_stream();
 
     let mut pgns = String::from("");
@@ -120,7 +126,7 @@ pub async fn analyse_player(conn: PgPooledConnection, player_id: &str) {
                 println!("SAVED");
                 pgn_count = 0;
                 pgns = String::from("");
-            },
+            }
             Some(Err(_)) | None => break,
         }
     }

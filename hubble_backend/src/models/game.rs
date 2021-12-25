@@ -1,17 +1,17 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use futures::join;
 
-use diesel::{Queryable};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use diesel::Queryable;
 
 use crate::schema::games;
 use serde_json;
 
 #[derive(Insertable, Queryable, Deserialize, Identifiable, Serialize, Debug)]
-#[table_name="games"]
+#[table_name = "games"]
 pub struct GameRaw {
     id: String,
     opening_id: Option<String>,
@@ -25,17 +25,15 @@ pub struct GameRaw {
 
     winner: Option<String>,
 }
-    
+
 impl GameRaw {
-    fn read_json(key: serde_json::Value) -> Vec<String>{
+    fn read_json(key: serde_json::Value) -> Vec<String> {
         match key.get("data") {
-            Some(data) => {
-               match serde_json::from_str::<Vec<String>>(&data.to_string()) {
-                    Ok(s) => s,
-                    Err(_) => Vec::new()
-               }
+            Some(data) => match serde_json::from_str::<Vec<String>>(&data.to_string()) {
+                Ok(s) => s,
+                Err(_) => Vec::new(),
             },
-            None => Vec::new()
+            None => Vec::new(),
         }
     }
 
@@ -58,7 +56,8 @@ impl GameRaw {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct Game { //TODO REMOVE STRING use &str instead with lifetime
+pub struct Game {
+    //TODO REMOVE STRING use &str instead with lifetime
     pub id: String,
     pub opening_id: Option<String>,
     pub moves: Vec<String>,
@@ -81,18 +80,18 @@ impl Game {
             black: "".to_string(),
             white_rating: None,
             black_rating: None,
-            winner: None
+            winner: None,
         }
     }
 
-    pub fn into_raw(self) ->  GameRaw {
+    pub fn into_raw(self) -> GameRaw {
         let raw_moves = json!({"data": self.moves});
         let raw_scores = json!({"data": self.scores});
 
         GameRaw {
             id: self.id,
             opening_id: self.opening_id,
-            
+
             moves: raw_moves,
             scores: raw_scores,
 
@@ -100,13 +99,17 @@ impl Game {
             black: self.black,
             white_rating: self.white_rating,
             black_rating: self.black_rating,
-            winner: self.winner
+            winner: self.winner,
         }
     }
 }
 
 pub fn get_games(user_id: &str, conn: &PgConnection) -> Vec<Game> {
-    let raws = games::table.filter(games::white.eq(user_id)).or_filter(games::black.eq(user_id)).load::<GameRaw>(conn).expect("ERROR LOADING");
+    let raws = games::table
+        .filter(games::white.eq(user_id))
+        .or_filter(games::black.eq(user_id))
+        .load::<GameRaw>(conn)
+        .expect("ERROR LOADING");
     let mut games = Vec::new();
 
     for x in raws {
@@ -116,26 +119,41 @@ pub fn get_games(user_id: &str, conn: &PgConnection) -> Vec<Game> {
     games
 }
 
-pub fn save_games(games: Vec<Game>, conn: &PgConnection) -> Result<Vec<Game>, diesel::result::Error> {
-    let raw_games = games.into_iter().map(|x| x.into_raw()).collect::<Vec<GameRaw>>();
-    match diesel::insert_into(games::table).values(&raw_games).get_results(conn) {
-        Ok(returning) => Ok(returning.into_iter().map(|x: GameRaw| x.to_game()).collect()),
-        Err(e) => Err(e)
+pub fn save_games(
+    games: Vec<Game>,
+    conn: &PgConnection,
+) -> Result<Vec<Game>, diesel::result::Error> {
+    let raw_games = games
+        .into_iter()
+        .map(|x| x.into_raw())
+        .collect::<Vec<GameRaw>>();
+    match diesel::insert_into(games::table)
+        .values(&raw_games)
+        .get_results(conn)
+    {
+        Ok(returning) => Ok(returning
+            .into_iter()
+            .map(|x: GameRaw| x.to_game())
+            .collect()),
+        Err(e) => Err(e),
     }
 }
 
 pub fn save_game(game: Game, conn: &PgConnection) -> Result<Game, diesel::result::Error> {
     let raw = game.into_raw();
 
-    match diesel::insert_into(games::table).values(raw).get_result::<GameRaw>(conn) {
+    match diesel::insert_into(games::table)
+        .values(raw)
+        .get_result::<GameRaw>(conn)
+    {
         Ok(ret) => Ok(ret.to_game()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
 pub fn get_game(id: &str, conn: &PgConnection) -> Option<Game> {
     match games::table.filter(games::id.eq(id)).first::<GameRaw>(conn) {
         Ok(ret) => Some(ret.to_game()),
-        Err(_) => None
+        Err(_) => None,
     }
 }

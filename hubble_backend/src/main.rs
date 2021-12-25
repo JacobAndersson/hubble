@@ -1,11 +1,11 @@
 mod analyser;
-mod lichess;
-mod opening_tree;
-mod stockfish;
-mod player;
-mod models;
-mod schema;
 mod db;
+mod lichess;
+mod models;
+mod opening_tree;
+mod player;
+mod schema;
+mod stockfish;
 
 #[macro_use]
 extern crate rocket;
@@ -19,13 +19,13 @@ use dotenv::dotenv;
 use crate::opening_tree::MoveEntry;
 
 use crate::lichess::AnalysisErrors;
-use rocket::http::Status;
 use diesel::pg::PgConnection;
 use diesel::r2d2;
+use rocket::http::Status;
 
-use std::collections::HashMap;
-use db::{PgPool};
+use db::PgPool;
 use rocket::State;
+use std::collections::HashMap;
 
 #[get("/analyse/match/<id>")]
 async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
@@ -62,7 +62,6 @@ async fn opening(player: &str) -> Result<String, Status> {
         Err(_) => Err(Status::InternalServerError),
     }
 }
-
 
 #[launch]
 fn rocket() -> _ {
