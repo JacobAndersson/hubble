@@ -64,6 +64,7 @@ impl Visitor for GameAnalyser {
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
         // Support games from a non-standard starting position.
+        println!("{:?}", std::str::from_utf8(key).unwrap().to_string());
         match key {
             b"FEN" => {
                 let fen = match Fen::from_ascii(value.as_bytes()) {
@@ -108,9 +109,9 @@ impl Visitor for GameAnalyser {
                     }
                 }
             },
-            b"LichessURL" => {
+            b"LichessURL" | b"Site"=> {
                 if let Ok(url) = std::str::from_utf8(value.as_bytes()) {
-                    let id = String::from(url.split('/').nth(2).unwrap());
+                    let id = String::from(url.split('/').nth(3).unwrap());
                     self.game.id = id;
                 } 
             },

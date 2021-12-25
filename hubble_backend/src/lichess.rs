@@ -1,13 +1,14 @@
 use crate::analyser::GameAnalyser;
 use crate::player::Player;
 use crate::opening_tree::{MoveEntry, OpeningTree};
+use crate::db::PgPooledConnection;
 
 use pgn_reader::BufferedReader;
 use serde::Serialize;
 use std::collections::HashMap;
 use futures_util::StreamExt;
 
-use crate::models::Game as GameModel;
+use crate::models::{Game as GameModel, save_games};
 
 const API_BASE: &str = "https://lichess.org";
 
@@ -108,13 +109,12 @@ fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<GameModel> {
     matches
 }
 
-pub async fn analyse_player(player_id: &str) {
+pub async fn analyse_player(conn: PgPooledConnection, player_id: &str) {
     let url = format!("{}/api/games/user/{}?max=100&clocks=false&evals=false", API_BASE, player_id);
     let mut stream = reqwest::get(url).await.unwrap().bytes_stream();
 
     let mut pgns = String::from("");
     let mut pgn_count = 0;
-
 
     loop {
         match stream.next().await {
@@ -122,32 +122,21 @@ pub async fn analyse_player(player_id: &str) {
                 pgns.push_str(&format!("{}\n", std::str::from_utf8(&chunk).unwrap()));
                 pgn_count += 1;
 
-                if pgn_count < 2 {
+                if pgn_count < 10 {
                     continue;
                 }
+                println!("{}", &pgn_count);
 
                 let mut analyser = GameAnalyser::new("".to_string());
                 let games = analyse_games(pgns, &mut analyser);
-                println!("{:?}", games);
+                println!("SAVING");
+                save_games(games, &conn);
+                println!("SAVED");
                 pgn_count = 0;
                 pgns = String::from("");
             },
             Some(Err(_)) | None => break,
         }
-        
-        /*
-        if reader.read_game(&mut analyser).is_err() {
-            return Err(AnalysisErrors::Pgn);
-        }
-
-        let game = &analyser.scores;
-        let moves = analyser.moves.to_vec();
-
-        if game.contains(&None) {
-            return Err(AnalysisErrors::Pgn);
-        }
-        let scores = game.iter().map(|x| x.unwrap_or(0.)).collect::<Vec<f32>>();
-        */
     }
 }
 

@@ -5,19 +5,27 @@ mod stockfish;
 mod player;
 mod models;
 mod schema;
+mod db;
+
+#[macro_use]
+extern crate rocket;
 
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
 
-#[macro_use]
-extern crate rocket;
+use dotenv::dotenv;
+
 use crate::opening_tree::MoveEntry;
 
 use crate::lichess::AnalysisErrors;
 use rocket::http::Status;
+use diesel::pg::PgConnection;
+use diesel::r2d2;
 
 use std::collections::HashMap;
+use db::{PgPool};
+use rocket::State;
 
 #[get("/analyse/<id>")]
 async fn analyse(id: &str) -> Result<String, Status> {
@@ -34,9 +42,10 @@ async fn analyse(id: &str) -> Result<String, Status> {
 }
 
 #[get("/analyse/player/<player>")]
-async fn analyse_player(player: &str) -> &str{
-    lichess::analyse_player(player).await;
-    return "TESTING";
+async fn analyse_player(_dbpool: &State<PgPool>, player: &str) -> String {
+    let connection = db::pg_pool_handler(_dbpool).unwrap();
+    lichess::analyse_player(connection, player).await;
+    return "TESTING".to_string();
 }
 
 #[get("/opening/<player>")]
@@ -53,7 +62,12 @@ async fn opening(player: &str) -> Result<String, Status> {
     }
 }
 
+
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/api", routes![analyse, opening, analyse_player])
+    dotenv().ok();
+
+    rocket::build()
+        .manage(db::establish_connection())
+        .mount("/api", routes![analyse, opening, analyse_player])
 }
