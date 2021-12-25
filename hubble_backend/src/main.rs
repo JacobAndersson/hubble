@@ -27,9 +27,10 @@ use std::collections::HashMap;
 use db::{PgPool};
 use rocket::State;
 
-#[get("/analyse/<id>")]
-async fn analyse(id: &str) -> Result<String, Status> {
-    match lichess::analyse_lichess_game(id).await {
+#[get("/analyse/match/<id>")]
+async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
+    let connection = db::pg_pool_handler(_dbpool).unwrap();
+    match lichess::analyse_lichess_game(connection, id).await {
         Ok(game) => match serde_json::to_string(&game) {
             Ok(s) => Ok(s),
             Err(_) => Err(Status::InternalServerError),

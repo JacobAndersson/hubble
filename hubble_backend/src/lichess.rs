@@ -8,11 +8,11 @@ use serde::Serialize;
 use std::collections::HashMap;
 use futures_util::StreamExt;
 
-use crate::models::{Game as GameModel, save_games};
+use crate::models::game::{Game, save_games, save_game, get_game};
 
 const API_BASE: &str = "https://lichess.org";
 
-pub async fn get_game(id: &str) -> Result<String, reqwest::Error> {
+pub async fn get_game_lichess(id: &str) -> Result<String, reqwest::Error> {
     let url = format!("{}/game/export/{}?clocks=false?evals=false", API_BASE, id);
     reqwest::get(url).await?.text().await
 }
@@ -33,16 +33,12 @@ pub enum AnalysisErrors {
     NotFound,
 }
 
-#[derive(Debug, Serialize)]
-pub struct Game {
-    white: Player,
-    black: Player,
-    scores: Vec<f32>,
-    moves: Vec<String>
-}
+pub async fn analyse_lichess_game(conn: PgPooledConnection, game_id: &str) -> Result<Game, AnalysisErrors> {
+    if let Some(game) = get_game(game_id, &conn){
+        return Ok(game);
+    }
 
-pub async fn analyse_lichess_game(game_id: &str) -> Result<Game, AnalysisErrors> {
-    if let Ok(pgn) = get_game(game_id).await {
+    if let Ok(pgn) = get_game_lichess(game_id).await {
         if pgn.contains("<!DOCTYPE html>") {
             return Err(AnalysisErrors::NotFound);
         }
@@ -54,20 +50,10 @@ pub async fn analyse_lichess_game(game_id: &str) -> Result<Game, AnalysisErrors>
             return Err(AnalysisErrors::Pgn);
         }
 
-        let game = &analyser.scores;
-        let moves = analyser.moves.to_vec();
-
-        if game.contains(&None) {
-            return Err(AnalysisErrors::Pgn);
+        match save_game(analyser.game, &conn) {
+            Ok(g) => Ok(g),
+            Err(_) => Err(AnalysisErrors::Lichess)
         }
-        let scores = game.iter().map(|x| x.unwrap_or(0.)).collect::<Vec<f32>>();
-
-        Ok(Game {
-            scores,
-            moves,
-            black: analyser.black.clone(),
-            white: analyser.white.clone(),
-        })
     } else {
         Err(AnalysisErrors::Lichess)
     }
@@ -95,9 +81,9 @@ pub async fn opening_player(
     }
 }
 
-fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<GameModel> {
+fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
     let mut reader = BufferedReader::new_cursor(&pgns[..]);
-    let mut matches: Vec<GameModel> = Vec::new();
+    let mut matches: Vec<Game> = Vec::new();
 
     while let Some(ok) = reader.read_game(analyser).unwrap() {
        //game over
@@ -139,5 +125,3 @@ pub async fn analyse_player(conn: PgPooledConnection, player_id: &str) {
         }
     }
 }
-
-

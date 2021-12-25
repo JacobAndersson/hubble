@@ -123,3 +123,19 @@ pub fn save_games(games: Vec<Game>, conn: &PgConnection) -> Result<Vec<Game>, di
         Err(e) => Err(e)
     }
 }
+
+pub fn save_game(game: Game, conn: &PgConnection) -> Result<Game, diesel::result::Error> {
+    let raw = game.into_raw();
+
+    match diesel::insert_into(games::table).values(raw).get_result::<GameRaw>(conn) {
+        Ok(ret) => Ok(ret.to_game()),
+        Err(e) => Err(e)
+    }
+}
+
+pub fn get_game(id: &str, conn: &PgConnection) -> Option<Game> {
+    match games::table.filter(games::id.eq(id)).first::<GameRaw>(conn) {
+        Ok(ret) => Some(ret.to_game()),
+        Err(_) => None
+    }
+}
