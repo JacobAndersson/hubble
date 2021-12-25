@@ -142,7 +142,6 @@ impl Visitor for GameAnalyser {
             match san_plus.san.to_move(&self.pos) {
                 Ok(m) => {
                     self.pos.play_unchecked(&m);
-                    println!("{:?}", &m);
                     let uci = m.to_uci(self.pos.castles().mode()).to_string();
                     self.game.moves.push(uci);
                     self.analyse_position();

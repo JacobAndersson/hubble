@@ -8,6 +8,8 @@ use pgn_reader::BufferedReader;
 use serde::Serialize;
 use std::collections::HashMap;
 
+use regex::Regex;
+
 use crate::models::game::{get_game, save_game, save_games, Game};
 
 const API_BASE: &str = "https://lichess.org";
@@ -22,7 +24,6 @@ async fn get_games_player(username: &str, num: usize) -> Result<String, reqwest:
         "{}/api/games/user/{}?max={}&rated=true",
         API_BASE, username, num
     );
-    println!("{}", url);
     reqwest::get(url).await?.text().await
 }
 
@@ -108,22 +109,33 @@ pub async fn analyse_player(conn: PgPooledConnection, player_id: &str) {
     let mut pgns = String::from("");
     let mut pgn_count = 0;
 
+    let re = Regex::new(r"lichess.org/.{8}").unwrap();
+
     loop {
         match stream.next().await {
             Some(Ok(chunk)) => {
-                pgns.push_str(&format!("{}\n", std::str::from_utf8(&chunk).unwrap()));
+                let pgn = std::str::from_utf8(&chunk).unwrap();
+                if let Some(mat) = re.find(pgn) {
+                    let url = mat.as_str();
+                    if let Some(id) = url.split('/').nth(1) {
+                        if get_game(id, &conn).is_some() {
+                            continue;
+                        }
+                    }
+                }
+                
+                pgns.push_str(&format!("{}\n", pgn));
                 pgn_count += 1;
 
-                if pgn_count < 10 {
+                if pgn_count < 5 {
                     continue;
                 }
                 println!("{}", &pgn_count);
 
                 let mut analyser = GameAnalyser::new("".to_string());
                 let games = analyse_games(pgns, &mut analyser);
-                println!("SAVING");
+                println!("{:?}", games);
                 save_games(games, &conn);
-                println!("SAVED");
                 pgn_count = 0;
                 pgns = String::from("");
             }
