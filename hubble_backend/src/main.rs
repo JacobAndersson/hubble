@@ -1,9 +1,7 @@
-mod analyser;
+mod analysis;
 mod db;
 mod lichess;
 mod models;
-mod opening_tree;
-mod player;
 mod schema;
 mod stockfish;
 
@@ -16,11 +14,9 @@ extern crate dotenv;
 
 use dotenv::dotenv;
 
-use crate::opening_tree::MoveEntry;
+use crate::analysis::opening_tree::MoveEntry;
 
 use crate::lichess::AnalysisErrors;
-use diesel::pg::PgConnection;
-use diesel::r2d2;
 use rocket::http::Status;
 
 use db::PgPool;
@@ -43,10 +39,15 @@ async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
 }
 
 #[get("/analyse/player/<player>")]
-async fn analyse_player(_dbpool: &State<PgPool>, player: &str) -> String {
+async fn analyse_player(_dbpool: &State<PgPool>, player: &str) -> Result<String, Status> {
     let connection = db::pg_pool_handler(_dbpool).unwrap();
-    lichess::analyse_player(connection, player).await;
-    return "TESTING".to_string();
+    match lichess::analyse_player(connection, player).await {
+        Ok(games) => match serde_json::to_string(&games) {
+            Ok(s) => Ok(s),
+            Err(_) => Err(Status::InternalServerError),
+        },
+        Err(_) => Err(Status::InternalServerError),
+    }
 }
 
 #[get("/opening/<player>")]

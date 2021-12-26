@@ -45,19 +45,6 @@ impl Stockfish {
         }
     }
 
-    fn parse_score(&self, eval: &str) -> Option<f32> {
-        let words = eval
-            .split(' ')
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<&str>>();
-        let raw_score = &words[2].replace("+", "").replace("-", "").parse::<f32>();
-
-        match raw_score {
-            Ok(score) => Some(*score),
-            Err(_) => None,
-        }
-    }
-
     fn parse_eval(&self, output: String) -> Option<f32> {
         let words = output.split(' ').collect::<Vec<&str>>();
         match words.iter().position(|x| x == &"cp") {

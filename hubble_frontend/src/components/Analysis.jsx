@@ -27,23 +27,18 @@ ChartJS.register(
 );
 
 export default function Analysis({ gameId }) {
-	
-  const [white, setWhite] = useState("");
-  const [black, setBlack] = useState("");
   const [dataset, setDataset] = useState({});
-  const [moves, setMoves] = useState([]);
+  const [game, setGame] = useState({});
 
   useEffect(() => {
-    getScores().then( ({ white: newWhite, black: newBlack, scores: newScores, moves: newMoves}) => {
-      setWhite(newWhite);
-      setBlack(newBlack);
-      setMoves(newMoves);
+    getScores().then( (newGame) => {
+      setGame(newGame);
 
       setDataset({
-        labels: newScores.map((_, i)=> `move ${i}`),
+        labels: newGame.scores.map((_, i)=> `move ${i}`),
         datasets: [{
           label: "Score",
-          data: newScores,
+          data: newGame.scores,
           tension: 0.3,
         }]
       });
@@ -60,6 +55,7 @@ export default function Analysis({ gameId }) {
   if (Object.keys(dataset).length === 0){
     return (
       <div>
+        <p>{gameId}</p>
         <p>WAIT</p>
       </div>
     );
@@ -67,9 +63,10 @@ export default function Analysis({ gameId }) {
     return (
       <div className={styles.container}>
         <div>
-          <p>{`${black.name}-${black.rating}`}</p>
-          <Board moves={moves} />
-          <p>{`${white.name}-${white.rating}`}</p>
+          <p>{gameId}</p>
+          <p>{`${game.black}-${game.black_rating}`}</p>
+          <Board moves={game.moves} />
+          <p>{`${game.white}-${game.white_rating}`}</p>
         </div>
         <div className = {styles.chartContainer}>
           <Line
@@ -80,7 +77,7 @@ export default function Analysis({ gameId }) {
             }}
           />
         </div>
-        {JSON.stringify(moves)}
+        {JSON.stringify(game.moves)}
       </div>
     );
   }

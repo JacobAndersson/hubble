@@ -20,8 +20,9 @@ export default function Board({moves}) {
     }
 
     let code = e.code;
-    if (code === 'ArrowRight') {
+    if (code === 'ArrowRight' && moveIdx < moves.length) {
       safeGameMutate(game => {
+        console.log(moves[moveIdx]);
         game.move(moves[moveIdx]);
         moveIdx += 1;
       });
@@ -40,7 +41,5 @@ export default function Board({moves}) {
     }
   }, []);
 
-  return (
-            <Chessboard position={game.fen()} />
-  );
+  return <Chessboard position={game.fen()} />;
 }

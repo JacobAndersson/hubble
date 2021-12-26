@@ -3,34 +3,21 @@ use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
 
 use crate::models::game::Game;
-use crate::player::Player;
 use crate::stockfish::Stockfish;
 
 pub struct GameAnalyser {
-    player_id: String,
     engine: Stockfish,
-    current_id: String, //current Game id
-    pub scores: Vec<Option<f32>>,
     success: bool,
     pos: Chess,
-    pub black: Player,
-    pub white: Player,
-    pub moves: Vec<String>,
     pub game: Game,
 }
 
 impl GameAnalyser {
-    pub fn new(player_id: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            player_id,
             engine: Stockfish::new().unwrap(),
-            current_id: String::from(""),
-            scores: Vec::new(),
             success: true,
             pos: Chess::default(),
-            black: Player::empty(),
-            white: Player::empty(),
-            moves: Vec::new(),
             game: Game::empty(),
         }
     }
@@ -50,13 +37,8 @@ impl Visitor for GameAnalyser {
     type Result = bool;
 
     fn begin_game(&mut self) {
-        self.current_id = "".to_string();
         self.success = true;
-        self.scores = Vec::new();
-        self.black = Player::empty();
-        self.white = Player::empty();
         self.pos = Chess::default();
-        self.moves = Vec::new();
         self.game = Game::empty();
     }
 
@@ -82,17 +64,14 @@ impl Visitor for GameAnalyser {
             b"White" => {
                 let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
                 self.game.white = name;
-                //self.white.name = name;
             }
             b"Black" => {
                 let name = std::str::from_utf8(value.as_bytes()).unwrap().to_string();
-                //self.black.name = name;
                 self.game.black = name;
             }
             b"WhiteElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
                     if let Ok(rating) = vs.to_string().parse::<i32>() {
-                        //self.white.rating = rating;
                         self.game.white_rating = Some(rating);
                     }
                 }
@@ -100,7 +79,6 @@ impl Visitor for GameAnalyser {
             b"BlackElo" => {
                 if let Ok(vs) = std::str::from_utf8(value.as_bytes()) {
                     if let Ok(rating) = vs.to_string().parse::<i32>() {
-                        //self.black.rating = rating;
                         self.game.black_rating = Some(rating);
                     }
                 }
@@ -150,7 +128,6 @@ impl Visitor for GameAnalyser {
                     self.success = false;
                 }
             }
-            self.moves.push(san_plus.to_string());
         }
     }
 

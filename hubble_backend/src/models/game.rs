@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use futures::join;
-
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::Queryable;
@@ -104,6 +102,7 @@ impl Game {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_games(user_id: &str, conn: &PgConnection) -> Vec<Game> {
     let raws = games::table
         .filter(games::white.eq(user_id))
