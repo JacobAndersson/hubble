@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Board from './Board';
+import { useParams } from "react-router-dom";
 
 import { Line } from 'react-chartjs-2';
 import styles from './Analysis.module.css';
@@ -26,7 +27,10 @@ ChartJS.register(
     Legend
 );
 
-export default function Analysis({ gameId }) {
+export default function Analysis() {
+  let params = useParams();
+  let gameId = params?.id;
+
   const [dataset, setDataset] = useState({});
   const [game, setGame] = useState({});
 

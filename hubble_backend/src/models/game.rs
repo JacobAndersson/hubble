@@ -103,12 +103,27 @@ impl Game {
 }
 
 #[allow(dead_code)]
-pub fn get_games(user_id: &str, conn: &PgConnection) -> Vec<Game> {
+pub fn get_games_player(user_id: &str, conn: &PgConnection) -> Vec<Game> {
     let raws = games::table
         .filter(games::white.eq(user_id))
         .or_filter(games::black.eq(user_id))
         .load::<GameRaw>(conn)
         .expect("ERROR LOADING");
+    let mut games = Vec::new();
+
+    for x in raws {
+        games.push(x.to_game());
+    }
+
+    games
+}
+
+
+pub fn get_games(conn: &PgConnection) -> Vec<Game> {
+    let raws = games::table
+        .load::<GameRaw>(conn)
+        .expect("ERROR LOADING");
+
     let mut games = Vec::new();
 
     for x in raws {

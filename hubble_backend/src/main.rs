@@ -15,6 +15,7 @@ extern crate dotenv;
 use dotenv::dotenv;
 
 use crate::analysis::opening_tree::MoveEntry;
+use crate::models::game;
 
 use crate::lichess::AnalysisErrors;
 use rocket::http::Status;
@@ -22,6 +23,7 @@ use rocket::http::Status;
 use db::PgPool;
 use rocket::State;
 use std::collections::HashMap;
+use crate::analysis::blunder::find_blunder;
 
 #[get("/analyse/match/<id>")]
 async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
@@ -64,11 +66,33 @@ async fn opening(player: &str) -> Result<String, Status> {
     }
 }
 
+
+#[get("/blunder/<id>")]
+async fn blunder(dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
+    let conn = db::pg_pool_handler(dbpool).unwrap();
+    match game::get_game(id, &conn) {
+        Some(game) => match serde_json::to_string(&find_blunder(&game)) {
+            Ok(blunders) => Ok(blunders),
+            Err(_) => Err(Status::InternalServerError)
+        },
+        None => Err(Status::NotFound)
+    }
+}
+
+#[get("/games")]
+async fn games(dbpool: &State<PgPool>) -> Result<String, Status> {
+    let conn = db::pg_pool_handler(dbpool).unwrap();
+    match serde_json::to_string(&game::get_games(&conn)) {
+        Ok(s) => Ok(s),
+        Err(_) => Err(Status::InternalServerError)
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
     dotenv().ok();
 
     rocket::build()
         .manage(db::establish_connection())
-        .mount("/api", routes![analyse, opening, analyse_player])
+        .mount("/api", routes![analyse, opening, analyse_player, blunder, games])
 }
