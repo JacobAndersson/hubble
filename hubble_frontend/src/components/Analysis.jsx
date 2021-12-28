@@ -51,7 +51,6 @@ export default function Analysis() {
 
   function getScores() {
     return axios.get(`/api/analyse/match/${gameId}`).then(res => {
-      console.log(res.data);
       return res?.data
     });
   }
@@ -81,7 +80,6 @@ export default function Analysis() {
             }}
           />
         </div>
-        {JSON.stringify(game.moves)}
       </div>
     );
   }

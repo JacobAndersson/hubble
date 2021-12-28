@@ -1,0 +1,13 @@
+.container {
+  overflow: 100%;
+  overflow-y: scroll;
+}
+
+.moveContainer {
+  display: flex;
+}
+
+.move {
+  padding: 0.5rem; 
+  cursor: pointer;
+}
