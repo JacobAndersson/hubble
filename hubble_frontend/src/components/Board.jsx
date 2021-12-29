@@ -46,21 +46,21 @@ export default function Board({moves}) {
   function handleMoveClick(_, idx) {
     let diff = idx - moveIdx.current;
 
-    if (diff > 0) {
-      //play diff moves
+    if (diff >= 0) {
       safeGameMutate(game => {
-          for (let i = 0; i <= diff; i++) {
-            let mv = moves[moveIdx.current];
-            let src = mv.slice(0, 2);
-            let target = mv.slice(2, 4);
+        for (let i = 0; i <= diff; i++) {
+          let mv = moves[moveIdx.current];
+          let src = mv.slice(0, 2);
+          let target = mv.slice(2, 4);
 
-            game.move({
-              from: src,
-              to: target,
-              promotion: 'q' // always promote to a queen for example simplicity
-            });
-            moveIdx.current += 1;
-          }
+          game.move({
+            from: src,
+            to: target,
+            promotion: 'q' //TODO: FIXE PROMOTION
+          });
+          moveIdx.current += 1;
+        }
+          moveIdx.current -= 1;
       });
     } else if (diff < 0) {
         safeGameMutate(game => {
@@ -69,7 +69,7 @@ export default function Board({moves}) {
             moveIdx.current -= 1;
           }
       });
-    }
+    } 
   }
 
   function onDrop(sourceSquare, targetSquare) {
