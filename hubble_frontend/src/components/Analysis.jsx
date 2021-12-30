@@ -47,7 +47,7 @@ export default function Analysis() {
   }
 
   function safeGameMutate(modify, done) {
-    setGame((g) => {
+    setBoard((g) => {
       const update = { ...g };
       modify(update);
       return update;
@@ -56,10 +56,9 @@ export default function Analysis() {
 
   function handleMoveChange(newIdx) {
     let diff = newIdx - moveIdx;
-    let mvI = moveIdx;
 
     if (diff >= 0 ){
-      safeGameMutate(game => {
+      safeGameMutate(board => {
         for (let i = 0; i < diff; i++) {
           let mv = game.moves[moveIdx + i + 1];
           let src = mv.slice(0, 2);
@@ -71,13 +70,11 @@ export default function Analysis() {
             promotion: 'q' //TODO: FIXE PROMOTION
           });
         }
-        mvI -= 1;
       });
     } else {
-      safeGameMutate(game => {
+      safeGameMutate(board => {
         for (let i = 0; i > diff; i --) {
           board.undo();
-          mvI -= 1;
         }
       });
     }

@@ -5,7 +5,7 @@ function pairs(arr) {
   return arr.reduce((result, value, index, array) => {
     if (index % 2 === 0){
         result.push(array.slice(index, index + 2));
-    } else if (index == arr.length - 1) {
+    } else if (index === arr.length - 1) {
       result.push([value])
     }
     return result;

@@ -1,11 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import Chess from 'chess.js';
+import { useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import MovePicker from './MovePicker';
 import styles from './Board.module.css';
 
 export default function Board({moves, game, blunders, moveIdx, onMoveChange, onKeyPress}) {
-  const moveIdxRef = useRef(moveIdx);
 
   function handleKeyPress(e) {
     if (moves.length === 0) {
