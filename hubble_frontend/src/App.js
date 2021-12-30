@@ -1,11 +1,8 @@
-import Analysis from './components/Analysis';
-import Chooser from './components/Chooser';
-import {
-  Routes,
-  Route
-} from "react-router-dom";
+import Analysis from "./components/Analysis";
+import Chooser from "./components/Chooser";
+import { Routes, Route } from "react-router-dom";
 
-import './App.css';
+import "./App.css";
 
 function App() {
   return (

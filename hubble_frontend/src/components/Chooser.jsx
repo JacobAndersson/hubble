@@ -1,21 +1,21 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function Chooser() {
   const [games, setGames] = useState([]);
   useEffect(() => {
-    getGames(); 
-  }, [])
+    getGames();
+  }, []);
 
   function getGames() {
-    axios.get('/api/games').then(res => {
+    axios.get("/api/games").then((res) => {
       setGames(res.data);
     });
   }
 
   return (
     <>
-      {games.map(x => {
+      {games.map((x) => {
         return (
           <div key={x.id}>
             <a href={`/analyse/${x.id}`}>{`${x.id}`}</a>
@@ -23,6 +23,5 @@ export default function Chooser() {
         );
       })}
     </>
-  )
-
+  );
 }

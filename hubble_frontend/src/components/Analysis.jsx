@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef} from 'react';
-import axios from 'axios';
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { useParams } from "react-router-dom";
-import Chess from 'chess.js';
+import Chess from "chess.js";
 
-import Board from './Board';
-import ScoreChart from './ScoreChart';
+import Board from "./Board";
+import ScoreChart from "./ScoreChart";
 
-import styles from './Analysis.module.css';
+import styles from "./Analysis.module.css";
 
 export default function Analysis() {
   let params = useParams();
@@ -19,29 +19,29 @@ export default function Analysis() {
   const [moveIdx, _setMoveIdx] = useState(-1);
   const moveIdxRef = useRef(-1);
 
-  const setMoveIdx = newIdx => {
+  const setMoveIdx = (newIdx) => {
     _setMoveIdx(newIdx);
     moveIdxRef.current = newIdx;
-  }
+  };
 
   useEffect(() => {
-    getScores().then( (newGame) => {
+    getScores().then((newGame) => {
       setGame(newGame);
-    })
+    });
 
-    getBlunders().then(data => {
+    getBlunders().then((data) => {
       setBlunders(data);
     });
-  }, [gameId])
+  }, [gameId]);
 
   function getScores() {
-    return axios.get(`/api/analyse/match/${gameId}`).then(res => {
-      return res?.data
+    return axios.get(`/api/analyse/match/${gameId}`).then((res) => {
+      return res?.data;
     });
   }
 
   function getBlunders() {
-    return axios.get(`/api/blunder/${gameId}`).then(res => {
+    return axios.get(`/api/blunder/${gameId}`).then((res) => {
       return res?.data;
     });
   }
@@ -57,8 +57,8 @@ export default function Analysis() {
   function handleMoveChange(newIdx) {
     let diff = newIdx - moveIdx;
 
-    if (diff >= 0 ){
-      safeGameMutate(board => {
+    if (diff >= 0) {
+      safeGameMutate((board) => {
         for (let i = 0; i < diff; i++) {
           let mv = game.moves[moveIdx + i + 1];
           let src = mv.slice(0, 2);
@@ -67,25 +67,25 @@ export default function Analysis() {
           board.move({
             from: src,
             to: target,
-            promotion: 'q' //TODO: FIXE PROMOTION
+            promotion: "q", //TODO: FIXE PROMOTION
           });
         }
       });
     } else {
-      safeGameMutate(board => {
-        for (let i = 0; i > diff; i --) {
+      safeGameMutate((board) => {
+        for (let i = 0; i > diff; i--) {
           board.undo();
         }
       });
     }
     setMoveIdx(newIdx);
   }
- 
+
   function onKeyPress(diff) {
     handleMoveChange(moveIdxRef.current + diff);
   }
 
-  if (Object.keys(game).length === 0){
+  if (Object.keys(game).length === 0) {
     return (
       <div>
         <p>{gameId}</p>
@@ -97,10 +97,17 @@ export default function Analysis() {
         <div>
           <p>{gameId}</p>
           <p>{`${game.black}-${game.black_rating}`}</p>
-          <Board game={board} moves={game.moves} blunders={blunders} moveIdx={moveIdx} onMoveChange={handleMoveChange} onKeyPress={onKeyPress} />
+          <Board
+            game={board}
+            moves={game.moves}
+            blunders={blunders}
+            moveIdx={moveIdx}
+            onMoveChange={handleMoveChange}
+            onKeyPress={onKeyPress}
+          />
           <p>{`${game.white}-${game.white_rating}`}</p>
         </div>
-        <ScoreChart game={game} moveIdx={moveIdx} /> 
+        <ScoreChart game={game} moveIdx={moveIdx} />
       </div>
     );
   }

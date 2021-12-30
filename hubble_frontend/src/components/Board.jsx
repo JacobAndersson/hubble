@@ -1,19 +1,25 @@
-import { useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
-import MovePicker from './MovePicker';
-import styles from './Board.module.css';
+import { useEffect } from "react";
+import { Chessboard } from "react-chessboard";
+import MovePicker from "./MovePicker";
+import styles from "./Board.module.css";
 
-export default function Board({moves, game, blunders, moveIdx, onMoveChange, onKeyPress}) {
-
+export default function Board({
+  moves,
+  game,
+  blunders,
+  moveIdx,
+  onMoveChange,
+  onKeyPress,
+}) {
   function handleKeyPress(e) {
     if (moves.length === 0) {
       return;
     }
 
     let code = e.code;
-    if (code === 'ArrowRight') {
-      onKeyPress(1)
-    } else if (code === 'ArrowLeft') {
+    if (code === "ArrowRight") {
+      onKeyPress(1);
+    } else if (code === "ArrowLeft") {
       onKeyPress(-1);
     }
   }
@@ -23,16 +29,21 @@ export default function Board({moves, game, blunders, moveIdx, onMoveChange, onK
   }
 
   useEffect(() => {
-    let listener = document.addEventListener('keydown', handleKeyPress);
+    let listener = document.addEventListener("keydown", handleKeyPress);
     return () => {
-      document.removeEventListener('keydown', listener);
-    }
+      document.removeEventListener("keydown", listener);
+    };
   }, []);
 
   return (
     <div className={styles.container}>
       <Chessboard position={game.fen()} />
-      <MovePicker moves={moves} onMoveClick={handleMoveClick} blunders={blunders} currentIdx={moveIdx} />
+      <MovePicker
+        moves={moves}
+        onMoveClick={handleMoveClick}
+        blunders={blunders}
+        currentIdx={moveIdx}
+      />
     </div>
   );
 }
