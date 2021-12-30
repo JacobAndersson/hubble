@@ -56,6 +56,13 @@ export default function ScoreChart({ game, moveIdx }) {
                   borderColor: "rgba(255, 99, 132)",
                   borderWidth: 2,
                 },
+                zero: {
+                  type: "line",
+                  yMin: 0,
+                  yMax: 0,
+                  borderColor: "rgba(128, 128, 128)",
+                  borderWidth: 2,
+                },
               },
             },
           },
