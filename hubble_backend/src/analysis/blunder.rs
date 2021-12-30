@@ -9,7 +9,6 @@ pub fn find_blunder(game: &Game) -> Vec<(usize, &String)> {
     for ((idx, mv), sc) in game.moves.iter().enumerate().zip(game.scores.iter()) {
         let score = sc.parse::<f32>().unwrap();
         if prev_score - score > 200. {
-            println!("BLUNDER {}", idx);
             blunders.push((idx, mv));
         }
 

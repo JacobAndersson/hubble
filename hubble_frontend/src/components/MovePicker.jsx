@@ -1,4 +1,5 @@
 import styles from './MovePicker.module.css';
+import classnames from 'classnames';
 
 function pairs(arr) {
   return arr.reduce((result, value, index, array) => {
@@ -11,13 +12,19 @@ function pairs(arr) {
   }, []);
 }
 
-export default function MovePicker({ moves, onMoveClick}) {
+export default function MovePicker({ moves, blunders, onMoveClick, currentIdx }) {
+  let blundersIdx = blunders.map(x => x[0]);
+
   let mvs  = pairs(moves).map((mv, idx) => {
     return (
       <div className={styles.moveContainer} key={`${mv}-${idx}`}>
         {mv.map((m, i) => {
+          let mvIdx = 2*idx + i;
+          let isBlunder = blundersIdx.includes(mvIdx);
+          let isCurrent = mvIdx === currentIdx;
+
           return (
-            <p key={`${m}-${i}`} onClick={() => onMoveClick(m, 2*idx + i)} className={styles.move}>{m}</p>
+            <p key={`${m}-${i}`} onClick={() => onMoveClick(m, mvIdx)} className={classnames(styles.move, isBlunder? styles.blunder: "" , isCurrent? styles.current: "")}>{m}</p>
           );
         })}
       </div>

@@ -1,52 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef} from 'react';
 import axios from 'axios';
-import Board from './Board';
 import { useParams } from "react-router-dom";
+import Chess from 'chess.js';
 
-import { Line } from 'react-chartjs-2';
+import Board from './Board';
+import ScoreChart from './ScoreChart';
+
 import styles from './Analysis.module.css';
-
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-);
 
 export default function Analysis() {
   let params = useParams();
   let gameId = params?.id;
 
-  const [dataset, setDataset] = useState({});
   const [game, setGame] = useState({});
+  const [blunders, setBlunders] = useState([]);
+  const [board, setBoard] = useState(new Chess());
+
+  const [moveIdx, _setMoveIdx] = useState(-1);
+  const moveIdxRef = useRef(-1);
+
+  const setMoveIdx = newIdx => {
+    _setMoveIdx(newIdx);
+    moveIdxRef.current = newIdx;
+  }
 
   useEffect(() => {
     getScores().then( (newGame) => {
       setGame(newGame);
-
-      setDataset({
-        labels: newGame.scores.map((_, i)=> `move ${i}`),
-        datasets: [{
-          label: "Score",
-          data: newGame.scores,
-          tension: 0.3,
-        }]
-      });
     })
+
+    getBlunders().then(data => {
+      setBlunders(data);
+    });
   }, [gameId])
 
   function getScores() {
@@ -55,11 +40,58 @@ export default function Analysis() {
     });
   }
 
-  if (Object.keys(dataset).length === 0){
+  function getBlunders() {
+    return axios.get(`/api/blunder/${gameId}`).then(res => {
+      return res?.data;
+    });
+  }
+
+  function safeGameMutate(modify, done) {
+    setGame((g) => {
+      const update = { ...g };
+      modify(update);
+      return update;
+    });
+  }
+
+  function handleMoveChange(newIdx) {
+    let diff = newIdx - moveIdx;
+    let mvI = moveIdx;
+
+    if (diff >= 0 ){
+      safeGameMutate(game => {
+        for (let i = 0; i < diff; i++) {
+          let mv = game.moves[moveIdx + i + 1];
+          let src = mv.slice(0, 2);
+          let target = mv.slice(2, 4);
+
+          board.move({
+            from: src,
+            to: target,
+            promotion: 'q' //TODO: FIXE PROMOTION
+          });
+        }
+        mvI -= 1;
+      });
+    } else {
+      safeGameMutate(game => {
+        for (let i = 0; i > diff; i --) {
+          board.undo();
+          mvI -= 1;
+        }
+      });
+    }
+    setMoveIdx(newIdx);
+  }
+ 
+  function onKeyPress(diff) {
+    handleMoveChange(moveIdxRef.current + diff);
+  }
+
+  if (Object.keys(game).length === 0){
     return (
       <div>
         <p>{gameId}</p>
-        <p>WAIT</p>
       </div>
     );
   } else {
@@ -68,18 +100,10 @@ export default function Analysis() {
         <div>
           <p>{gameId}</p>
           <p>{`${game.black}-${game.black_rating}`}</p>
-          <Board moves={game.moves} />
+          <Board game={board} moves={game.moves} blunders={blunders} moveIdx={moveIdx} onMoveChange={handleMoveChange} onKeyPress={onKeyPress} />
           <p>{`${game.white}-${game.white_rating}`}</p>
         </div>
-        <div className = {styles.chartContainer}>
-          <Line
-            data={dataset}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-            }}
-          />
-        </div>
+        <ScoreChart game={game} moveIdx={moveIdx} /> 
       </div>
     );
   }

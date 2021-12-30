@@ -11,3 +11,11 @@
   padding: 0.5rem; 
   cursor: pointer;
 }
+
+.blunder {
+  background-color: red;
+}
+
+.current {
+  background-color: green;
+}
