@@ -13,10 +13,23 @@ table! {
 }
 
 table! {
+    openings (id) {
+        id -> Int4,
+        eco -> Varchar,
+        name -> Varchar,
+        pgn -> Varchar,
+    }
+}
+
+table! {
     users (id) {
         id -> Varchar,
         rating -> Nullable<Int4>,
     }
 }
 
-allow_tables_to_appear_in_same_query!(games, users,);
+allow_tables_to_appear_in_same_query!(
+    games,
+    openings,
+    users,
+);

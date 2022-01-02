@@ -1,0 +1,12 @@
+[package]
+name = "parse_openings"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hubble = { path = "../hubble_backend" }
+dotenv = "0.15.0"
+diesel = { version = "1.4.4", features = ["postgres", "serde_json", "r2d2"] }
+

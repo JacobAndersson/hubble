@@ -118,11 +118,8 @@ pub fn get_games_player(user_id: &str, conn: &PgConnection) -> Vec<Game> {
     games
 }
 
-
 pub fn get_games(conn: &PgConnection) -> Vec<Game> {
-    let raws = games::table
-        .load::<GameRaw>(conn)
-        .expect("ERROR LOADING");
+    let raws = games::table.load::<GameRaw>(conn).expect("ERROR LOADING");
 
     let mut games = Vec::new();
 
