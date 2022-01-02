@@ -37,7 +37,6 @@ pub async fn analyse_lichess_game(
     game_id: &str,
 ) -> Result<Game, AnalysisErrors> {
     if let Some(game) = get_game(game_id, &conn) {
-        println!("HERE");
         return Ok(game);
     }
     if let Ok(pgn) = get_game_lichess(game_id).await {
@@ -102,7 +101,7 @@ pub async fn analyse_player(
     player_id: &str,
 ) -> Result<Vec<Game>, AnalysisErrors> {
     let url = format!(
-        "{}/api/games/user/{}?max=100&clocks=false&evals=false",
+        "{}/api/games/user/{}?max=150&clocks=false&evals=false",
         API_BASE, player_id
     );
     let mut stream = reqwest::get(url).await.unwrap().bytes_stream();
