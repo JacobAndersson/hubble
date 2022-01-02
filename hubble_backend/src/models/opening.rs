@@ -11,14 +11,16 @@ use serde_json;
 #[derive(Insertable, Queryable, Deserialize, Serialize, Debug)]
 #[table_name = "openings"]
 pub struct Opening {
+    id: i32, //Means id needs to be set for insert. Not ideal but fine since insert is only done ones.
     eco: String,
     name: String,
     pgn: String,
 }
 
 impl Opening {
-    pub fn new(eco: String, name: String, pgn: String) -> Self {
+    pub fn new(id: i32, eco: String, name: String, pgn: String) -> Self {
         Self {
+            id,
             eco,
             name, 
             pgn,

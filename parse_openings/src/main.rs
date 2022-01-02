@@ -22,7 +22,7 @@ fn open_file(filename: &str) -> Vec<Vec<String>> {
         .collect::<Vec<Vec<String>>>()
 }
 
-fn insert_file(filename: &str, conn: &PgConnection) {
+fn insert_file(filename: &str, conn: &PgConnection, id: &mut i32) {
     let data = open_file(filename);
     let mut openings = Vec::new();
 
@@ -35,7 +35,8 @@ fn insert_file(filename: &str, conn: &PgConnection) {
         let name = &row[1];
         let moves = &row[2];
 
-        openings.push(Opening::new(eco.to_string(), name.to_string(), moves.to_string()));
+        openings.push(Opening::new(*id, eco.to_string(), name.to_string(), moves.to_string()));
+        *id += 1;
     }
 
     insert_openings(&conn, openings).unwrap();
@@ -45,10 +46,11 @@ fn main() {
     dotenv::from_filename("../.env").ok();
     let conn = get_connection();
     let files = ["a", "b", "c", "d", "e"];
+    let mut id = 0;
 
     for f in files {
         let filename = format!("data/{}.tsv", f);
         println!("filename {}", &filename);
-        insert_file(&filename, &conn);
+        insert_file(&filename, &conn, &mut id);
     }
 }
