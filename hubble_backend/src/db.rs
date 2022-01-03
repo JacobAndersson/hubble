@@ -1,5 +1,5 @@
-use diesel::pg::PgConnection;
 use crate::diesel::Connection;
+use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PoolError, PooledConnection};
 use dotenv::dotenv;
 use std::env;
@@ -23,11 +23,8 @@ pub fn pg_pool_handler(pool: &PgPool) -> Result<PgPooledConnection, PoolError> {
     Ok(_pool)
 }
 
-
 pub fn get_connection() -> PgConnection {
     //Only use when you only need one connection
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }

@@ -1,6 +1,6 @@
 pub mod game;
-pub mod user;
 mod opening;
+pub mod user;
 
+pub use opening::{get_opening, insert_openings, Opening};
 pub use user::User;
-pub use opening::{Opening, insert_openings};
