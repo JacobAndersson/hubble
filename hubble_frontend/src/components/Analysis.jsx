@@ -15,6 +15,7 @@ export default function Analysis() {
   const [game, setGame] = useState({});
   const [blunders, setBlunders] = useState([]);
   const [board, setBoard] = useState(new Chess());
+  const [opening, setOpening] = useState("");
 
   const [moveIdx, _setMoveIdx] = useState(-1);
   const moveIdxRef = useRef(-1);
@@ -25,7 +26,7 @@ export default function Analysis() {
   };
 
   useEffect(() => {
-    getScores().then((newGame) => {
+    getGame().then((newGame) => {
       setGame(newGame);
     });
 
@@ -34,10 +35,33 @@ export default function Analysis() {
     });
   }, [gameId]);
 
-  function getScores() {
+  useEffect(() => {
+    getOpening();
+  }, [game?.id]);
+
+  function getGame() {
     return axios.get(`/api/analyse/match/${gameId}`).then((res) => {
       return res?.data;
     });
+  }
+
+  function getOpening() {
+    if (!Object.keys(game).length) {
+      return;
+    }
+
+    let data = { moves: game?.moves, eco: game?.opening_id };
+
+    axios
+      .post(`/api/opening`, data)
+      .then((res) => {
+        setOpening(res?.data?.name);
+      })
+      .catch((err) => {
+        if (err?.response?.status === 404) {
+          setOpening("");
+        }
+      });
   }
 
   function getBlunders() {
@@ -106,6 +130,7 @@ export default function Analysis() {
             onKeyPress={onKeyPress}
           />
           <p>{`${game.white}-${game.white_rating}`}</p>
+          {opening ? <p>{`Opening ${opening}`}</p> : null}
         </div>
         <ScoreChart game={game} moveIdx={moveIdx} />
       </div>

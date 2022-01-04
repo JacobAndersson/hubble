@@ -9,10 +9,10 @@ use crate::schema::openings;
 #[derive(Insertable, Queryable, Deserialize, Serialize, Debug)]
 #[table_name = "openings"]
 pub struct Opening {
-    id: i32, //Means id needs to be set for insert. Not ideal but fine since insert is only done ones.
-    eco: String,
-    name: String,
-    pgn: String,
+    pub id: i32, //Means id needs to be set for insert. Not ideal but fine since insert is only done ones.
+    pub eco: String,
+    pub name: String,
+    pub pgn: String,
 }
 
 impl Opening {
@@ -39,11 +39,10 @@ pub fn insert_openings(
         .get_results::<Opening>(conn)
 }
 
-pub fn get_opening(conn: &PgConnection, moves: &str, eco: &str) -> Option<Opening> {
+pub fn get_openings(conn: &PgConnection, eco: &str) -> Option<Vec<Opening>> {
     return match openings::table
-        .filter(openings::pgn.eq(moves))
         .filter(openings::eco.eq(eco))
-        .first::<Opening>(conn)
+        .load::<Opening>(conn)
     {
         Ok(ret) => Some(ret),
         Err(_) => None,

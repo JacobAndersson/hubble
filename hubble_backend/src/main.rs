@@ -76,6 +76,13 @@ fn rocket() -> _ {
 
     rocket::build().manage(db::establish_connection()).mount(
         "/api",
-        routes![analyse, analyse_player, blunder, games, opening::opening_player, opening::find_opening],
+        routes![
+            analyse,
+            analyse_player,
+            blunder,
+            games,
+            opening::opening_player,
+            opening::find_opening
+        ],
     )
 }
