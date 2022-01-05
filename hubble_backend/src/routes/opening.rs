@@ -20,10 +20,6 @@ pub struct OpeningRequest {
     eco: String,
 }
 
-fn format_moves(moves: &Vec<String>) -> String {
-    "1. b3 d5".to_string()
-}
-
 fn match_length(opening: &Opening, moves: Vec<String>) -> usize {
     let cleaned = opening.pgn.replace(".", "");
     let splits = cleaned.split(" ");

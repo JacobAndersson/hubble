@@ -2,7 +2,7 @@ mod analysis;
 mod db;
 mod lichess;
 mod models;
-mod opening;
+mod routes;
 mod schema;
 mod stockfish;
 
@@ -22,53 +22,7 @@ use crate::analysis::blunder::find_blunder;
 use db::PgPool;
 use rocket::State;
 
-#[get("/analyse/match/<id>")]
-async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
-    let connection = db::pg_pool_handler(_dbpool).unwrap();
-    match lichess::analyse_lichess_game(connection, id).await {
-        Ok(game) => match serde_json::to_string(&game) {
-            Ok(s) => Ok(s),
-            Err(_) => Err(Status::InternalServerError),
-        },
-        Err(e) => match e {
-            AnalysisErrors::NotFound => Err(Status::NotFound),
-            _ => Err(Status::InternalServerError),
-        },
-    }
-}
-
-#[get("/analyse/player/<player>")]
-async fn analyse_player(_dbpool: &State<PgPool>, player: &str) -> Result<String, Status> {
-    let connection = db::pg_pool_handler(_dbpool).unwrap();
-    match lichess::analyse_player(connection, player).await {
-        Ok(games) => match serde_json::to_string(&games) {
-            Ok(s) => Ok(s),
-            Err(_) => Err(Status::InternalServerError),
-        },
-        Err(_) => Err(Status::InternalServerError),
-    }
-}
-
-#[get("/blunder/<id>")]
-async fn blunder(dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
-    let conn = db::pg_pool_handler(dbpool).unwrap();
-    match game::get_game(id, &conn) {
-        Some(game) => match serde_json::to_string(&find_blunder(&game)) {
-            Ok(blunders) => Ok(blunders),
-            Err(_) => Err(Status::InternalServerError),
-        },
-        None => Err(Status::NotFound),
-    }
-}
-
-#[get("/games")]
-async fn games(dbpool: &State<PgPool>) -> Result<String, Status> {
-    let conn = db::pg_pool_handler(dbpool).unwrap();
-    match serde_json::to_string(&game::get_games(&conn)) {
-        Ok(s) => Ok(s),
-        Err(_) => Err(Status::InternalServerError),
-    }
-}
+use crate::routes::*;
 
 #[launch]
 fn rocket() -> _ {
@@ -77,10 +31,10 @@ fn rocket() -> _ {
     rocket::build().manage(db::establish_connection()).mount(
         "/api",
         routes![
-            analyse,
-            analyse_player,
-            blunder,
-            games,
+            analyse::analyse,
+            analyse::analyse_player,
+            blunder::blunder,
+            crate::routes::game::games,
             opening::opening_player,
             opening::find_opening
         ],
