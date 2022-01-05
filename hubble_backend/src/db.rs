@@ -23,6 +23,7 @@ pub fn pg_pool_handler(pool: &PgPool) -> Result<PgPooledConnection, PoolError> {
     Ok(_pool)
 }
 
+#[allow(dead_code)]
 pub fn get_connection() -> PgConnection {
     //Only use when you only need one connection
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

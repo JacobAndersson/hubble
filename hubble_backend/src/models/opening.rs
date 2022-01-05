@@ -30,6 +30,7 @@ pub fn insert_opening(
         .get_result::<Opening>(conn)
 }
 
+#[allow(dead_code)]
 pub fn insert_openings(
     conn: &PgConnection,
     openings: Vec<Opening>,

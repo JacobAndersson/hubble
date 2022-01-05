@@ -2,7 +2,7 @@ use db::PgPool;
 use rocket::http::Status;
 use rocket::State;
 
-use crate::{db, game};
+use crate::{db, models::game};
 
 #[get("/games")]
 pub async fn games(dbpool: &State<PgPool>) -> Result<String, Status> {

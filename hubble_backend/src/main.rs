@@ -13,15 +13,6 @@ extern crate rocket;
 extern crate diesel;
 extern crate dotenv;
 
-use crate::models::game;
-
-use crate::lichess::AnalysisErrors;
-use rocket::http::Status;
-
-use crate::analysis::blunder::find_blunder;
-use db::PgPool;
-use rocket::State;
-
 use crate::routes::*;
 
 #[launch]

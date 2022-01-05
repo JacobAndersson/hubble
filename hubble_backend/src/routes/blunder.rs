@@ -3,7 +3,7 @@ use rocket::http::Status;
 use rocket::State;
 
 use crate::analysis::blunder::find_blunder;
-use crate::{db, game};
+use crate::{db, models::game};
 
 #[get("/blunder/<id>")]
 pub async fn blunder(dbpool: &State<PgPool>, id: &str) -> Result<String, Status> {
