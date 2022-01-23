@@ -511,16 +511,12 @@ name = "hubble"
 version = "0.1.0"
 dependencies = [
  "bytes",
- "dotenv",
- "futures",
  "futures-util",
  "hubble-db",
  "pgn-reader",
  "regex",
  "reqwest",
- "rocket",
  "serde",
- "serde_json",
  "shakmaty",
  "tokio",
 ]
