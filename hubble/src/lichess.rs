@@ -17,7 +17,7 @@ pub async fn get_game_lichess(id: &str) -> Result<String, reqwest::Error> {
     reqwest::get(url).await?.text().await
 }
 
-async fn get_games_player(username: &str, num: usize) -> Result<String, reqwest::Error> {
+pub async fn get_games_player(username: &str, num: usize) -> Result<String, reqwest::Error> {
     let url = format!(
         "{}/api/games/user/{}?max={}&rated=true",
         API_BASE, username, num

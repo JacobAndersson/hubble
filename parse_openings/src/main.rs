@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use hubble::models::{Opening, insert_openings};
-use hubble::db::get_connection;
+use hubble_db::models::{Opening, insert_openings};
+use hubble_db::get_connection;
 use diesel::pg::PgConnection;
 
 fn format_row(row: &str) -> Vec<String> {
