@@ -1,27 +1,72 @@
-use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
-use shakmaty::fen::Fen;
-use shakmaty::{fen, CastlingMode, Chess, Position};
-
-use crate::stockfish::Stockfish;
+use shakmaty::{CastlingMode, Chess, Move, uci::Uci, fen::Fen, Position};
+use uciengine::uciengine::{UciEngine, GoJob};
+use uciengine::analysis::Score;
+use std::sync::Arc;
+use pgn_reader::{RawHeader, SanPlus, Skip, AsyncVisitor};
+use async_trait::async_trait;
 use hubble_db::models::game::Game;
+use tokio::time::{sleep, Duration};
+
+async fn is_ready(engine: &Arc<UciEngine>) -> bool {
+    let setup_job = GoJob::new()
+        .uci_opt("Hash", 1024)
+        .uci_opt("Threads", 10);
+    println!("{:?}", setup_job.to_commands());
+
+    let result = engine.check_ready(setup_job).await.unwrap();
+    println!("ready {:?}", result.is_ready);
+    result.is_ready
+}
+
+pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
+    let fen = Fen::from_setup(pos);
+    let uci_move = Uci::from_move(&m, CastlingMode::Standard);
+    let analysis_job = GoJob::new()
+        .uci_opt("Hash", 8192)
+        .uci_opt("Threads", 10)
+        .pos_fen(fen)
+        .pos_moves(uci_move.to_string())
+        .go_opt("nodes", 10 * 1000);
+    /*
+    while !is_ready(engine).await {
+        sleep(Duration::from_millis(100)).await 
+    }
+    */
+
+    let result = engine.go(analysis_job).await.unwrap();
+    match result.ai.score {
+        Score::Cp(value) => value,
+        Score::Mate(mvs_mate) => {
+            100_000 - mvs_mate
+        }
+    }
+}
+
 
 pub struct GameAnalyser {
-    engine: Stockfish,
+    engine: Arc<UciEngine>,
     success: bool,
     pos: Chess,
     pub game: Game,
 }
 
 impl GameAnalyser {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
+        let engine = UciEngine::new("/home/jacob/programming/hubble/hubble/stockfish");
+
+        while !is_ready(&engine).await {
+            sleep(Duration::from_millis(1000)).await 
+        }
+
         Self {
-            engine: Stockfish::new().unwrap(),
+            engine,
             success: true,
             pos: Chess::default(),
             game: Game::empty(),
         }
     }
 
+    /*
     fn analyse_position(&mut self) {
         let fen = fen::epd(&self.pos);
         match self.engine.eval_fen(&fen) {
@@ -31,9 +76,11 @@ impl GameAnalyser {
             None => {} //handle fail
         }
     }
+    */
 }
 
-impl Visitor for GameAnalyser {
+#[async_trait(?Send)]
+impl AsyncVisitor for GameAnalyser {
     type Result = bool;
 
     fn begin_game(&mut self) {
@@ -115,14 +162,17 @@ impl Visitor for GameAnalyser {
         Skip(true) // stay in the mainline
     }
 
-    fn san(&mut self, san_plus: SanPlus) {
+    async fn san(&mut self, san_plus: SanPlus) {
         if self.success {
             match san_plus.san.to_move(&self.pos) {
                 Ok(m) => {
-                    self.pos.play_unchecked(&m);
                     let uci = m.to_uci(self.pos.castles().mode()).to_string();
                     self.game.moves.push(uci);
-                    self.analyse_position();
+                    let score = eval_move(&self.pos, &m, &self.engine).await;
+                    println!("score {}", score);
+                    self.pos.play_unchecked(&m);
+                    self.game.scores.push(score.to_string());
+                    //self.analyse_position();
                 }
                 Err(_err) => {
                     self.success = false;
@@ -131,7 +181,7 @@ impl Visitor for GameAnalyser {
         }
     }
 
-    fn end_game(&mut self) -> Self::Result {
+    async fn end_game(&mut self) -> Self::Result {
         false
     }
 }

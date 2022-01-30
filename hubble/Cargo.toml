@@ -7,13 +7,16 @@ edition = "2021"
 
 [dependencies]
 shakmaty = "0.20.2"
-pgn-reader = "0.19.0"
+#pgn-reader = "0.19.0"
+pgn-reader = { git="https://github.com/marcusbuffett/rust-pgn-reader" }
 reqwest = { version = "0.11", features = ["json", "stream"] }
 tokio = { version = "1", features = ["full"] }
 serde = "1.0.132"
+futures = "0.3"
 futures-util = "0.3.19"
 bytes = "1.1.0"
 regex = "1"
 anyhow = "1.0.53"
-
+async-trait = "0.1.52"
+uciengine = { git="https://github.com/JacobAndersson/uciengine" }
 hubble-db = { path="../hubble-db" }

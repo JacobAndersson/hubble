@@ -56,11 +56,13 @@ fn gen_report(count: &mut Vec<(String, OpeningResult)>) {
     println!("{table}");
 }
 
+
 #[tokio::main]
 async fn main() {
     dotenv::from_filename("../.env").ok();
     let args = Args::parse();
     let conn = hubble_db::get_connection();
+    /*
     match hubble::analysis::best_opening(&args.player, &conn, 1000, args.only_white).await {
         Ok(mut opening_count) => {
             gen_report(&mut opening_count);
@@ -68,5 +70,11 @@ async fn main() {
         Err(_) => {
             println!("COULD NOT FETCH REPORT");
         }
+    }
+    */
+
+    match hubble::lichess::analyse_player(&conn, &args.player).await {
+        Ok(games) => println!("{:?}", games),
+        Err(_) => println!("FAILED"),
     }
 }

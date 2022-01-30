@@ -2,13 +2,13 @@ use crate::analysis::opening_tree::{MoveEntry, OpeningTree};
 use crate::analysis::GameAnalyser;
 
 use futures_util::StreamExt;
-use pgn_reader::BufferedReader;
+use pgn_reader::{AsyncBufferedReader, BufferedReader};
 use std::collections::HashMap;
 
 use regex::Regex;
 
 use hubble_db::models::game::{get_game, save_game, save_games, Game};
-use hubble_db::PgPooledConnection;
+use hubble_db::{PgPooledConnection, PgConnection};
 
 const API_BASE: &str = "https://lichess.org";
 
@@ -44,10 +44,10 @@ pub async fn analyse_lichess_game(
             return Err(AnalysisErrors::NotFound);
         }
 
-        let mut reader = BufferedReader::new_cursor(&pgn[..]);
-        let mut analyser = GameAnalyser::new();
+        let mut reader = AsyncBufferedReader::new_cursor(&pgn[..]);
+        let mut analyser = GameAnalyser::new().await;
 
-        if reader.read_game(&mut analyser).is_err() {
+        if reader.read_game(&mut analyser).await.is_err() {
             return Err(AnalysisErrors::Pgn);
         }
 
@@ -82,11 +82,11 @@ pub async fn opening_player(
     }
 }
 
-fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
-    let mut reader = BufferedReader::new_cursor(&pgns[..]);
+async fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
+    let mut reader = AsyncBufferedReader::new_cursor(&pgns[..]);
     let mut matches: Vec<Game> = Vec::new();
 
-    while let Some(_ok) = reader.read_game(analyser).unwrap() {
+    while let Some(_ok) = reader.read_game(analyser).await.unwrap() {
         //game over
         let game = analyser.game.clone();
         println!("{:?}", &game);
@@ -97,11 +97,11 @@ fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
 }
 
 pub async fn analyse_player(
-    conn: PgPooledConnection,
+    conn: &PgConnection,
     player_id: &str,
 ) -> Result<Vec<Game>, AnalysisErrors> {
     let url = format!(
-        "{}/api/games/user/{}?max=150&clocks=false&evals=false",
+        "{}/api/games/user/{}?max=10&clocks=false&evals=false",
         API_BASE, player_id
     );
     let mut stream = reqwest::get(url).await.unwrap().bytes_stream();
@@ -120,7 +120,7 @@ pub async fn analyse_player(
                 if let Some(mat) = re.find(pgn) {
                     let url = mat.as_str();
                     if let Some(id) = url.split('/').nth(1) {
-                        if get_game(id, &conn).is_some() {
+                        if get_game(id, conn).is_some() {
                             continue;
                         }
                     }
@@ -134,10 +134,10 @@ pub async fn analyse_player(
                 }
                 println!("{}", &pgn_count);
 
-                let mut analyser = GameAnalyser::new();
-                let games = analyse_games(pgns, &mut analyser);
+                let mut analyser = GameAnalyser::new().await;
+                let games = analyse_games(pgns, &mut analyser).await;
                 println!("{:?}", games);
-                match save_games(games, &conn) {
+                match save_games(games, conn) {
                     Ok(mut gs) => all_games.append(&mut gs),
                     Err(_) => return Err(AnalysisErrors::Lichess),
                 }
