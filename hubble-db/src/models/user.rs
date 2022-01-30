@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use diesel::prelude::*;
 use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use diesel::Queryable;
 
 use crate::schema::users;

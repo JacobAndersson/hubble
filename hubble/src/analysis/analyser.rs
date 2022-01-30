@@ -2,8 +2,8 @@ use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use shakmaty::fen::Fen;
 use shakmaty::{fen, CastlingMode, Chess, Position};
 
-use hubble_db::models::game::Game;
 use crate::stockfish::Stockfish;
+use hubble_db::models::game::Game;
 
 pub struct GameAnalyser {
     engine: Stockfish,

@@ -1,4 +1,4 @@
-use hubble_db::{PgPool, pg_pool_handler, models::game};
+use hubble_db::{models::game, pg_pool_handler, PgPool};
 use rocket::http::Status;
 use rocket::State;
 

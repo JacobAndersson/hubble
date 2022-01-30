@@ -1,10 +1,10 @@
-use shakmaty::{san::San, Chess, Position};
-use pgn_reader::BufferedReader;
-use hubble_db::models::Opening;
-use crate::lichess::get_games_player;
-use hubble_db::PgConnection;
 use crate::analysis::{OpeningCounter, OpeningResult};
+use crate::lichess::get_games_player;
 use anyhow::Result;
+use hubble_db::models::Opening;
+use hubble_db::PgConnection;
+use pgn_reader::BufferedReader;
+use shakmaty::{san::San, Chess, Position};
 
 pub fn match_length(opening: &Opening, moves: &Vec<String>) -> usize {
     //moves - vector with the moves in uci format
@@ -38,7 +38,7 @@ pub fn match_length(opening: &Opening, moves: &Vec<String>) -> usize {
     length
 }
 
-pub fn match_length_sans(opening: &Opening, moves: &Vec<String> ) -> usize {
+pub fn match_length_sans(opening: &Opening, moves: &Vec<String>) -> usize {
     //For when both opening and moves is in san format
     let cleaned = opening.pgn.replace(".", "");
     let splits = cleaned.split(" ");
@@ -56,7 +56,7 @@ pub fn match_length_sans(opening: &Opening, moves: &Vec<String> ) -> usize {
 
         if moves[idx] == mv {
             length += 1;
-        } else  {
+        } else {
             break;
         }
         idx += 1;
@@ -64,14 +64,21 @@ pub fn match_length_sans(opening: &Opening, moves: &Vec<String> ) -> usize {
     length
 }
 
-pub async fn best_opening(player_id: &str, conn: &PgConnection, num: usize, white: Option<bool>) -> Result<Vec<(String, OpeningResult)>>{
-    //white - true if only to analyse games where white, false - black. None - both 
+pub async fn best_opening(
+    player_id: &str,
+    conn: &PgConnection,
+    num: usize,
+    white: Option<bool>,
+) -> Result<Vec<(String, OpeningResult)>> {
+    //white - true if only to analyse games where white, false - black. None - both
     let pgn = get_games_player(player_id, num).await?;
     let mut counter = OpeningCounter::new(conn, player_id.to_string(), white);
     let mut reader = BufferedReader::new_cursor(&pgn[..]);
 
-    while let Some(_ok) = reader.read_game(&mut counter).unwrap() {
-    }
+    while let Some(_ok) = reader.read_game(&mut counter).unwrap() {}
 
-    Ok(counter.openings.into_iter().collect::<Vec<(String,OpeningResult)>>())
+    Ok(counter
+        .openings
+        .into_iter()
+        .collect::<Vec<(String, OpeningResult)>>())
 }

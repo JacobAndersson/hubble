@@ -1,15 +1,15 @@
+use crate::analysis::opening::match_length_sans;
+use hubble_db::models::{get_all_openings, Opening};
+use hubble_db::PgConnection;
 use pgn_reader::{RawHeader, SanPlus, Skip, Visitor};
 use std::collections::HashMap;
-use hubble_db::models::{Opening, get_all_openings};
-use crate::analysis::opening::match_length_sans;
-use hubble_db::PgConnection;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone)]
 pub struct OpeningResult {
     pub won: u32,
     pub tie: u32,
-    pub lost: u32
+    pub lost: u32,
 }
 
 impl OpeningResult {
@@ -17,7 +17,7 @@ impl OpeningResult {
         Self {
             won: 0,
             tie: 0,
-            lost: 0
+            lost: 0,
         }
     }
 }
@@ -37,7 +37,7 @@ pub struct OpeningCounter {
     is_white: bool,
     result: String,
     player: String,
-    white_only: Option<bool> //true - only games where player is white is analysed, false - black, none - both
+    white_only: Option<bool>, //true - only games where player is white is analysed, false - black, none - both
 }
 
 impl OpeningCounter {
@@ -60,14 +60,13 @@ impl OpeningCounter {
             player,
             is_white: true,
             result: String::from(""),
-            white_only
+            white_only,
         }
     }
 }
 
 impl Visitor for OpeningCounter {
     type Result = bool;
-
 
     fn begin_game(&mut self) {
         self.current_moves = Vec::new();
@@ -80,10 +79,10 @@ impl Visitor for OpeningCounter {
             match key {
                 b"ECO" => {
                     self.current_eco = value_str.to_string();
-                },
+                }
                 b"White" => {
                     self.is_white = value_str == self.player;
-                },
+                }
                 b"Result" => {
                     self.result = value_str.to_string();
                 }
@@ -95,7 +94,7 @@ impl Visitor for OpeningCounter {
     fn end_headers(&mut self) -> Skip {
         match self.white_only {
             Some(val) => Skip(val == self.is_white),
-            None => Skip(false)
+            None => Skip(false),
         }
     }
 
@@ -103,7 +102,7 @@ impl Visitor for OpeningCounter {
         Skip(true)
     }
 
-    fn san(&mut self, san_plus: SanPlus){
+    fn san(&mut self, san_plus: SanPlus) {
         self.current_moves.push(san_plus.to_string());
     }
 
@@ -122,9 +121,12 @@ impl Visitor for OpeningCounter {
                     opening_name = &op.name;
                 }
             }
-            
+
             if opening_name != "" {
-                let opening_count = self.openings.entry(opening_name.to_string()).or_insert(OpeningResult::new());
+                let opening_count = self
+                    .openings
+                    .entry(opening_name.to_string())
+                    .or_insert(OpeningResult::new());
                 let white_won = self.result == "1-0";
                 if self.result == "1/2-1/2" {
                     opening_count.tie += 1;

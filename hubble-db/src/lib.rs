@@ -1,7 +1,8 @@
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 
 mod db;
-mod schema;
 pub mod models;
+mod schema;
 pub use db::*;
 pub use diesel::pg::PgConnection;

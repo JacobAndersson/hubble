@@ -2,9 +2,9 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use hubble_db::models::{Opening, insert_openings};
-use hubble_db::get_connection;
 use diesel::pg::PgConnection;
+use hubble_db::get_connection;
+use hubble_db::models::{insert_openings, Opening};
 
 fn format_row(row: &str) -> Vec<String> {
     row.split("\t").map(str::to_string).collect()
@@ -35,7 +35,12 @@ fn insert_file(filename: &str, conn: &PgConnection, id: &mut i32) {
         let name = &row[1];
         let moves = &row[2];
 
-        openings.push(Opening::new(*id, eco.to_string(), name.to_string(), moves.to_string()));
+        openings.push(Opening::new(
+            *id,
+            eco.to_string(),
+            name.to_string(),
+            moves.to_string(),
+        ));
         *id += 1;
     }
 

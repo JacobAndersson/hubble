@@ -1,8 +1,8 @@
 use rocket::http::Status;
 use rocket::State;
 
-use hubble_db::{PgPool, pg_pool_handler};
 use hubble_db::models::{get_openings, Opening};
+use hubble_db::{pg_pool_handler, PgPool};
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 

@@ -51,9 +51,7 @@ pub fn get_openings(conn: &PgConnection, eco: &str) -> Option<Vec<Opening>> {
 }
 
 pub fn get_all_openings(conn: &PgConnection) -> Vec<Opening> {
-    return match openings::table
-        .load::<Opening>(conn)
-    {
+    return match openings::table.load::<Opening>(conn) {
         Ok(ret) => ret,
         Err(_) => vec![],
     };
