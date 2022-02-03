@@ -11,8 +11,8 @@ struct Args {
     #[clap(long)]
     only_white: Option<bool>,
 
-    #[clap(short, long)]
-    game_id: Option<String>,
+    #[clap(long)]
+    opening_report: bool
 }
 
 fn gen_report(count: &mut Vec<(String, OpeningResult)>) {
@@ -56,25 +56,25 @@ fn gen_report(count: &mut Vec<(String, OpeningResult)>) {
     println!("{table}");
 }
 
-
 #[tokio::main]
 async fn main() {
     dotenv::from_filename("../.env").ok();
     let args = Args::parse();
     let conn = hubble_db::get_connection();
-    /*
-    match hubble::analysis::best_opening(&args.player, &conn, 1000, args.only_white).await {
-        Ok(mut opening_count) => {
-            gen_report(&mut opening_count);
-        }
-        Err(_) => {
-            println!("COULD NOT FETCH REPORT");
-        }
-    }
-    */
 
-    match hubble::lichess::analyse_player(&conn, &args.player).await {
-        Ok(games) => println!("{:?}", games),
-        Err(_) => println!("FAILED"),
+    if args.opening_report {
+        match hubble::analysis::best_opening(&args.player, &conn, 1000, args.only_white).await {
+            Ok(mut opening_count) => {
+                gen_report(&mut opening_count);
+            }
+            Err(_) => {
+                println!("COULD NOT FETCH REPORT");
+            }
+        }
+    } else {
+        match hubble::lichess::analyse_player(&conn, &args.player).await {
+            Ok(games) => println!("{:?}", games),
+            Err(_) => println!("FAILED"),
+        }
     }
 }

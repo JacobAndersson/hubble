@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate diesel;
+pub extern crate diesel;
 
 mod db;
 pub mod models;

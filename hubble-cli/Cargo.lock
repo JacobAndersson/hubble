@@ -1308,6 +1308,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "uciengine"
 version = "0.1.33"
+source = "git+https://github.com/JacobAndersson/uciengine#16995a9becf9f1a5b32d4f051fe6ee1f33ccbdb6"
 dependencies = [
  "envor",
  "log",

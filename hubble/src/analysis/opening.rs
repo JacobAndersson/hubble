@@ -6,10 +6,10 @@ use hubble_db::PgConnection;
 use pgn_reader::BufferedReader;
 use shakmaty::{san::San, Chess, Position};
 
-pub fn match_length(opening: &Opening, moves: &Vec<String>) -> usize {
+pub fn match_length(opening: &Opening, moves: &[String]) -> usize {
     //moves - vector with the moves in uci format
     let cleaned = opening.pgn.replace(".", "");
-    let splits = cleaned.split(" ");
+    let splits = cleaned.split(' ');
     let mut length = 0;
     let mut idx = 0;
 
@@ -22,7 +22,7 @@ pub fn match_length(opening: &Opening, moves: &Vec<String>) -> usize {
         if let Ok(san) = mv.parse::<San>() {
             if let Ok(parsed_move) = san.to_move(&board) {
                 board.play_unchecked(&parsed_move);
-                println!("{} {}", moves[idx], parsed_move.to_string());
+                println!("{} {}", moves[idx], parsed_move);
                 if moves[idx] == parsed_move.to_string().replace("-", "") {
                     length += 1;
                     idx += 1;
@@ -38,10 +38,10 @@ pub fn match_length(opening: &Opening, moves: &Vec<String>) -> usize {
     length
 }
 
-pub fn match_length_sans(opening: &Opening, moves: &Vec<String>) -> usize {
+pub fn match_length_sans(opening: &Opening, moves: &[String]) -> usize {
     //For when both opening and moves is in san format
     let cleaned = opening.pgn.replace(".", "");
-    let splits = cleaned.split(" ");
+    let splits = cleaned.split(' ');
     let mut length = 0;
     let mut idx = 0;
 

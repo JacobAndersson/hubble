@@ -33,7 +33,7 @@ pub enum AnalysisErrors {
 }
 
 pub async fn analyse_lichess_game(
-    conn: PgPooledConnection,
+    conn: PgConnection,
     game_id: &str,
 ) -> Result<Game, AnalysisErrors> {
     if let Some(game) = get_game(game_id, &conn) {
@@ -97,7 +97,7 @@ async fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
 }
 
 pub async fn analyse_player(
-    conn: &PgConnection,
+    conn: PgConnection,
     player_id: &str,
 ) -> Result<Vec<Game>, AnalysisErrors> {
     let url = format!(
@@ -113,40 +113,35 @@ pub async fn analyse_player(
 
     let mut all_games: Vec<Game> = Vec::new();
 
-    loop {
-        match stream.next().await {
-            Some(Ok(chunk)) => {
-                let pgn = std::str::from_utf8(&chunk).unwrap();
-                if let Some(mat) = re.find(pgn) {
-                    let url = mat.as_str();
-                    if let Some(id) = url.split('/').nth(1) {
-                        if get_game(id, conn).is_some() {
-                            continue;
-                        }
-                    }
-                }
-
-                pgns.push_str(&format!("{}\n", pgn));
-                pgn_count += 1;
-
-                if pgn_count < 5 {
+    while let Some(Ok(chunk)) = stream.next().await {
+        let pgn = std::str::from_utf8(&chunk).unwrap();
+        if let Some(mat) = re.find(pgn) {
+            let url = mat.as_str();
+            if let Some(id) = url.split('/').nth(1) {
+                if get_game(id, &conn).is_some() {
                     continue;
                 }
-                println!("{}", &pgn_count);
-
-                let mut analyser = GameAnalyser::new().await;
-                let games = analyse_games(pgns, &mut analyser).await;
-                println!("{:?}", games);
-                match save_games(games, conn) {
-                    Ok(mut gs) => all_games.append(&mut gs),
-                    Err(_) => return Err(AnalysisErrors::Lichess),
-                }
-                pgn_count = 0;
-                pgns = String::from("");
             }
-            Some(Err(_)) | None => break,
         }
+
+        pgns.push_str(&format!("{}\n", pgn));
+        pgn_count += 1;
+
+        if pgn_count < 5 {
+            continue;
+        }
+        println!("{}", &pgn_count);
+
+        let mut analyser = GameAnalyser::new().await;
+        let games = analyse_games(pgns, &mut analyser).await;
+        println!("{:?}", games);
+        match save_games(games, &conn) {
+            Ok(mut gs) => all_games.append(&mut gs),
+            Err(_) => return Err(AnalysisErrors::Lichess),
+        }
+        pgn_count = 0;
+        pgns = String::from("");
     }
 
-    return Ok(all_games);
+    Ok(all_games)
 }

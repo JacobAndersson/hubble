@@ -41,18 +41,18 @@ pub fn insert_openings(
 }
 
 pub fn get_openings(conn: &PgConnection, eco: &str) -> Option<Vec<Opening>> {
-    return match openings::table
+    match openings::table
         .filter(openings::eco.eq(eco))
         .load::<Opening>(conn)
     {
         Ok(ret) => Some(ret),
         Err(_) => None,
-    };
+    }
 }
 
 pub fn get_all_openings(conn: &PgConnection) -> Vec<Opening> {
-    return match openings::table.load::<Opening>(conn) {
+    match openings::table.load::<Opening>(conn) {
         Ok(ret) => ret,
         Err(_) => vec![],
-    };
+    }
 }

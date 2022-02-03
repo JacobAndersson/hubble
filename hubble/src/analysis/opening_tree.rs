@@ -80,6 +80,12 @@ impl OpeningTree {
     }
 }
 
+impl Default for OpeningTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Visitor for OpeningTree {
     type Result = bool;
 

@@ -107,7 +107,7 @@ impl Visitor for OpeningCounter {
     }
 
     fn end_game(&mut self) -> Self::Result {
-        if self.current_moves.len() == 0 {
+        if self.current_moves.is_empty() {
             return false;
         }
 
@@ -122,11 +122,11 @@ impl Visitor for OpeningCounter {
                 }
             }
 
-            if opening_name != "" {
+            if opening_name.is_empty() {
                 let opening_count = self
                     .openings
                     .entry(opening_name.to_string())
-                    .or_insert(OpeningResult::new());
+                    .or_insert_with(OpeningResult::new);
                 let white_won = self.result == "1-0";
                 if self.result == "1/2-1/2" {
                     opening_count.tie += 1;

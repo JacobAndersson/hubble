@@ -17,8 +17,7 @@ pub fn establish_connection() -> PgPool {
 }
 
 pub fn pg_pool_handler(pool: &PgPool) -> Result<PgPooledConnection, PoolError> {
-    let _pool = pool.get().unwrap();
-    Ok(_pool)
+    pool.get()
 }
 
 #[allow(dead_code)]

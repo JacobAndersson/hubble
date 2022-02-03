@@ -20,18 +20,13 @@ async fn is_ready(engine: &Arc<UciEngine>) -> bool {
 
 pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     let fen = Fen::from_setup(pos);
-    let uci_move = Uci::from_move(&m, CastlingMode::Standard);
+    let uci_move = Uci::from_move(m, CastlingMode::Standard);
     let analysis_job = GoJob::new()
         .uci_opt("Hash", 8192)
         .uci_opt("Threads", 10)
         .pos_fen(fen)
         .pos_moves(uci_move.to_string())
         .go_opt("nodes", 10 * 1000);
-    /*
-    while !is_ready(engine).await {
-        sleep(Duration::from_millis(100)).await 
-    }
-    */
 
     let result = engine.go(analysis_job).await.unwrap();
     match result.ai.score {
@@ -146,7 +141,7 @@ impl AsyncVisitor for GameAnalyser {
                     self.game.winner = match result_string {
                         "1-0" => Some(self.game.white.clone()),
                         "0-1" => Some(self.game.black.clone()),
-                        "1/2-1/2" | _ => None,
+                        _ => None,
                     };
                 }
             }

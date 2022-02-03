@@ -1,4 +1,5 @@
-use hubble_db::{pg_pool_handler, PgPool};
+use hubble_db::{pg_pool_handler, PgPool, PgConnection};
+use hubble_db::diesel::prelude::*;
 use rocket::http::Status;
 use rocket::State;
 
@@ -22,6 +23,7 @@ pub async fn analyse(_dbpool: &State<PgPool>, id: &str) -> Result<String, Status
 #[get("/analyse/player/<player>")]
 pub async fn analyse_player(_dbpool: &State<PgPool>, player: &str) -> Result<String, Status> {
     let connection = pg_pool_handler(_dbpool).unwrap();
+    connection.asdfasdf();
     match lichess::analyse_player(connection, player).await {
         Ok(games) => match serde_json::to_string(&games) {
             Ok(s) => Ok(s),
