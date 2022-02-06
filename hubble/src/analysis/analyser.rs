@@ -7,23 +7,20 @@ use async_trait::async_trait;
 use hubble_db::models::game::Game;
 use tokio::time::{sleep, Duration};
 
-async fn is_ready(engine: &Arc<UciEngine>) -> bool {
-    let setup_job = GoJob::new()
-        .uci_opt("Hash", 1024)
-        .uci_opt("Threads", 10);
-    println!("{:?}", setup_job.to_commands());
+async fn get_engine() -> Arc<UciEngine> {
+    let engine = UciEngine::new("./stockfish");
 
+    let setup_job = GoJob::new()
+        .uci_opt("Hash", 8192)
+        .uci_opt("Threads", 10);
     let result = engine.check_ready(setup_job).await.unwrap();
-    println!("ready {:?}", result.is_ready);
-    result.is_ready
+    engine
 }
 
 pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     let fen = Fen::from_setup(pos);
     let uci_move = Uci::from_move(m, CastlingMode::Standard);
     let analysis_job = GoJob::new()
-        .uci_opt("Hash", 8192)
-        .uci_opt("Threads", 10)
         .pos_fen(fen)
         .pos_moves(uci_move.to_string())
         .go_opt("nodes", 10 * 1000);
@@ -47,14 +44,8 @@ pub struct GameAnalyser {
 
 impl GameAnalyser {
     pub async fn new() -> Self {
-        let engine = UciEngine::new("/home/jacob/programming/hubble/hubble/stockfish");
-
-        while !is_ready(&engine).await {
-            sleep(Duration::from_millis(1000)).await 
-        }
-
         Self {
-            engine,
+            engine: get_engine().await,
             success: true,
             pos: Chess::default(),
             game: Game::empty(),

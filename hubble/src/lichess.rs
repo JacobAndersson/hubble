@@ -137,7 +137,10 @@ pub async fn analyse_player(
         println!("{:?}", games);
         match save_games(games, &conn) {
             Ok(mut gs) => all_games.append(&mut gs),
-            Err(_) => return Err(AnalysisErrors::Lichess),
+            Err(e) => {
+                println!("{}", e);
+                return Err(AnalysisErrors::Lichess);
+            }
         }
         pgn_count = 0;
         pgns = String::from("");
