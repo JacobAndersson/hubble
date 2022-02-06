@@ -72,9 +72,9 @@ async fn main() {
             }
         }
     } else {
-        match hubble::lichess::analyse_player(&conn, &args.player).await {
+        match hubble::lichess::analyse_player(conn, &args.player).await {
             Ok(games) => println!("{:?}", games),
-            Err(_) => println!("FAILED"),
+            Err(e) => println!("{:?}", e),
         }
     }
 }
