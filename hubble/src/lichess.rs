@@ -33,7 +33,7 @@ pub enum AnalysisErrors {
 }
 
 pub async fn analyse_lichess_game(
-    conn: PgConnection,
+    conn: PgPooledConnection,
     game_id: &str,
 ) -> Result<Game, AnalysisErrors> {
     if let Some(game) = get_game(game_id, &conn) {
@@ -97,7 +97,7 @@ async fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
 }
 
 pub async fn analyse_player(
-    conn: PgConnection,
+    conn: PgPooledConnection,
     player_id: &str,
 ) -> Result<Vec<Game>, AnalysisErrors> {
     let url = format!(

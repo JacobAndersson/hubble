@@ -60,7 +60,8 @@ fn gen_report(count: &mut Vec<(String, OpeningResult)>) {
 async fn main() {
     dotenv::from_filename("../.env").ok();
     let args = Args::parse();
-    let conn = hubble_db::get_connection();
+    let pool = hubble_db::establish_connection();
+    let conn = pool.get().unwrap();
 
     if args.opening_report {
         match hubble::analysis::best_opening(&args.player, &conn, 1000, args.only_white).await {
@@ -73,7 +74,7 @@ async fn main() {
         }
     } else {
         match hubble::lichess::analyse_player(conn, &args.player).await {
-            Ok(games) => println!("{:?}", games),
+            Ok(games) => println!("Games: {:?}", games),
             Err(e) => println!("{:?}", e),
         }
     }
