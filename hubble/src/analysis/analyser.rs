@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 use hubble_db::models::game::Game;
 use pgn_reader::{AsyncVisitor, RawHeader, SanPlus, Skip};
-use shakmaty::{fen::Fen, uci::Uci, CastlingMode, Chess, Move, Position};
+use shakmaty::Rank;
+use shakmaty::{
+    bitboard::Bitboard, fen::Fen, uci::Uci, CastlingMode, Chess, Move, Position, Setup,
+};
 use std::sync::Arc;
 use uciengine::analysis::Score;
 use uciengine::uciengine::{GoJob, UciEngine};
@@ -34,6 +37,9 @@ pub struct GameAnalyser {
     success: bool,
     pos: Chess,
     pub game: Game,
+    middle_game_start: Option<usize>,
+    end_game_start: Option<usize>,
+    move_counter: usize,
 }
 
 impl GameAnalyser {
@@ -43,20 +49,38 @@ impl GameAnalyser {
             success: true,
             pos: Chess::default(),
             game: Game::empty(),
+            middle_game_start: None,
+            end_game_start: None,
+            move_counter: 0,
         }
     }
 
-    /*
-    fn analyse_position(&mut self) {
-        let fen = fen::epd(&self.pos);
-        match self.engine.eval_fen(&fen) {
-            Some(score) => {
-                self.game.scores.push(score.to_string());
-            }
-            None => {} //handle fail
+    fn is_end_game(&mut self) {
+        let board = self.pos.board();
+        let kings = board.kings();
+        let pawns = board.pawns();
+        let pieces = board.occupied();
+        let num_minor_major = (pieces & !kings & !pawns).count();
+
+        if num_minor_major <= 6 {
+            self.end_game_start = Some(self.move_counter);
         }
     }
-    */
+
+    fn is_middle_game(&mut self) {
+        let board = self.pos.board();
+        let kings = board.kings();
+        let pawns = board.pawns();
+        let pieces = board.occupied();
+
+        let num_minor_major = (pieces & !kings & !pawns).count();
+        let white_backrank_count = (pieces & Bitboard::from_rank(Rank::First)).count();
+        let black_backrank_count = (pieces & Bitboard::from_rank(Rank::Eighth)).count();
+
+        if num_minor_major <= 10 || white_backrank_count < 4 || black_backrank_count < 4 {
+            self.middle_game_start = Some(self.move_counter);
+        }
+    }
 }
 
 #[async_trait(?Send)]
@@ -67,6 +91,9 @@ impl AsyncVisitor for GameAnalyser {
         self.success = true;
         self.pos = Chess::default();
         self.game = Game::empty();
+        self.middle_game_start = None;
+        self.end_game_start = None;
+        self.move_counter = 0;
     }
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
@@ -149,10 +176,15 @@ impl AsyncVisitor for GameAnalyser {
                     let uci = m.to_uci(self.pos.castles().mode()).to_string();
                     self.game.moves.push(uci);
                     let score = eval_move(&self.pos, &m, &self.engine).await;
-                    println!("score {}", score);
                     self.pos.play_unchecked(&m);
+
+                    if self.middle_game_start.is_none() {
+                        self.is_middle_game()
+                    } else if self.end_game_start.is_none() {
+                        self.is_end_game();
+                    }
                     self.game.scores.push(score.to_string());
-                    //self.analyse_position();
+                    self.move_counter += 1;
                 }
                 Err(_err) => {
                     self.success = false;
@@ -162,6 +194,10 @@ impl AsyncVisitor for GameAnalyser {
     }
 
     async fn end_game(&mut self) -> Self::Result {
+        println!(
+            "middle game start {:?} end game start {:?}",
+            self.middle_game_start, self.end_game_start
+        );
         false
     }
 }
