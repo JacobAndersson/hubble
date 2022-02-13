@@ -12,7 +12,7 @@ struct Args {
     only_white: Option<bool>,
 
     #[clap(long)]
-    opening_report: bool
+    opening_report: bool,
 }
 
 fn gen_report(count: &mut Vec<(String, OpeningResult)>) {

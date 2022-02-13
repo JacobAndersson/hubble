@@ -18,7 +18,7 @@ pub struct OpeningRequest {
 }
 
 #[post("/opening", format = "json", data = "<opening>")]
-pub async fn find_opening(
+pub fn find_opening(
     dbpool: &State<PgPool>,
     opening: Json<OpeningRequest>,
 ) -> Result<Json<Opening>, Status> {
@@ -48,15 +48,12 @@ pub async fn find_opening(
 }
 
 #[get("/opening/<player>")]
-pub async fn opening_player(player: &str) -> Result<String, Status> {
+pub async fn opening_player(player: &str) -> Result<Json<HashMap<String, Vec<MoveEntry>>>, Status> {
     let res: Result<HashMap<String, Vec<MoveEntry>>, AnalysisErrors> =
         lichess::opening_player(player).await;
 
     match res {
-        Ok(opening) => match serde_json::to_string(&opening) {
-            Ok(s) => Ok(s),
-            Err(_) => Err(Status::InternalServerError),
-        },
+        Ok(opening) => Ok(Json(opening)),
         Err(_) => Err(Status::InternalServerError),
     }
 }

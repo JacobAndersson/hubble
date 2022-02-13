@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use regex::Regex;
 
 use hubble_db::models::game::{get_game, save_game, save_games, Game};
-use hubble_db::{PgPooledConnection, PgConnection};
+use hubble_db::PgPooledConnection;
 
 const API_BASE: &str = "https://lichess.org";
 

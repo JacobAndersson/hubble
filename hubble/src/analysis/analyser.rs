@@ -1,19 +1,16 @@
-use shakmaty::{CastlingMode, Chess, Move, uci::Uci, fen::Fen, Position};
-use uciengine::uciengine::{UciEngine, GoJob};
-use uciengine::analysis::Score;
-use std::sync::Arc;
-use pgn_reader::{RawHeader, SanPlus, Skip, AsyncVisitor};
 use async_trait::async_trait;
 use hubble_db::models::game::Game;
-use tokio::time::{sleep, Duration};
+use pgn_reader::{AsyncVisitor, RawHeader, SanPlus, Skip};
+use shakmaty::{fen::Fen, uci::Uci, CastlingMode, Chess, Move, Position};
+use std::sync::Arc;
+use uciengine::analysis::Score;
+use uciengine::uciengine::{GoJob, UciEngine};
 
 async fn get_engine() -> Arc<UciEngine> {
     let engine = UciEngine::new("./stockfish");
 
-    let setup_job = GoJob::new()
-        .uci_opt("Hash", 8192)
-        .uci_opt("Threads", 10);
-    let result = engine.check_ready(setup_job).await.unwrap();
+    let setup_job = GoJob::new().uci_opt("Hash", 8192).uci_opt("Threads", 10);
+    let _result = engine.check_ready(setup_job).await.unwrap();
     engine
 }
 
@@ -28,12 +25,9 @@ pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     let result = engine.go(analysis_job).await.unwrap();
     match result.ai.score {
         Score::Cp(value) => value,
-        Score::Mate(mvs_mate) => {
-            100_000 - mvs_mate
-        }
+        Score::Mate(mvs_mate) => 100_000 - mvs_mate,
     }
 }
-
 
 pub struct GameAnalyser {
     engine: Arc<UciEngine>,

@@ -18,7 +18,7 @@ fn rocket() -> _ {
                 analyse::analyse,
                 analyse::analyse_player,
                 blunder::blunder,
-                crate::routes::game::games,
+                game::games,
                 opening::opening_player,
                 opening::find_opening
             ],
