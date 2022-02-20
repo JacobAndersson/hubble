@@ -9,6 +9,8 @@ table! {
         white_rating -> Nullable<Int4>,
         black_rating -> Nullable<Int4>,
         winner -> Nullable<Varchar>,
+        middle_game -> Nullable<Int4>,
+        end_game -> Nullable<Int4>,
     }
 }
 
@@ -24,7 +26,8 @@ table! {
 table! {
     users (id) {
         id -> Varchar,
-        rating -> Nullable<Int4>,
+        title -> Nullable<Varchar>,
+        username -> Varchar,
     }
 }
 

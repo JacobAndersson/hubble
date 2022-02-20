@@ -5,6 +5,7 @@ use shakmaty::Rank;
 use shakmaty::{
     bitboard::Bitboard, fen::Fen, uci::Uci, CastlingMode, Chess, Move, Position, Setup,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 use uciengine::analysis::Score;
 use uciengine::uciengine::{GoJob, UciEngine};
@@ -23,7 +24,7 @@ pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     let analysis_job = GoJob::new()
         .pos_fen(fen)
         .pos_moves(uci_move.to_string())
-        .go_opt("nodes", 10 * 1000);
+        .go_opt("nodes", 1000 * 1000);
 
     let result = engine.go(analysis_job).await.unwrap();
     match result.ai.score {
@@ -32,14 +33,44 @@ pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     }
 }
 
+#[derive(Hash, PartialEq, std::cmp::Eq, Debug)]
+enum GamePhases {
+    Opening,
+    MiddleGame,
+    EndGame,
+}
+
+fn group_blunders_by_phase(
+    blunders: &Vec<usize>,
+    middle_game: Option<i32>,
+    end_game: Option<i32>,
+) -> HashMap<GamePhases, Vec<&usize>> {
+    let mut grouped = HashMap::from([
+        (GamePhases::Opening, Vec::new()),
+        (GamePhases::MiddleGame, Vec::new()),
+        (GamePhases::EndGame, Vec::new()),
+    ]);
+
+    for idx in blunders {
+        if Some(*idx as i32) < middle_game {
+            grouped.get_mut(&GamePhases::Opening).unwrap().push(idx);
+        } else if Some(*idx as i32) >= middle_game && Some(*idx as i32) < end_game {
+            grouped.get_mut(&GamePhases::MiddleGame).unwrap().push(idx);
+        } else {
+            grouped.get_mut(&GamePhases::EndGame).unwrap().push(idx);
+        }
+    }
+    grouped
+}
+
 pub struct GameAnalyser {
     engine: Arc<UciEngine>,
     success: bool,
     pos: Chess,
     pub game: Game,
-    middle_game_start: Option<usize>,
-    end_game_start: Option<usize>,
     move_counter: usize,
+    last_score: i32,
+    blunders: Vec<usize>,
 }
 
 impl GameAnalyser {
@@ -49,9 +80,9 @@ impl GameAnalyser {
             success: true,
             pos: Chess::default(),
             game: Game::empty(),
-            middle_game_start: None,
-            end_game_start: None,
             move_counter: 0,
+            last_score: 0,
+            blunders: Vec::new(),
         }
     }
 
@@ -63,7 +94,7 @@ impl GameAnalyser {
         let num_minor_major = (pieces & !kings & !pawns).count();
 
         if num_minor_major <= 6 {
-            self.end_game_start = Some(self.move_counter);
+            self.game.end_game = Some(self.move_counter as i32);
         }
     }
 
@@ -78,7 +109,7 @@ impl GameAnalyser {
         let black_backrank_count = (pieces & Bitboard::from_rank(Rank::Eighth)).count();
 
         if num_minor_major <= 10 || white_backrank_count < 4 || black_backrank_count < 4 {
-            self.middle_game_start = Some(self.move_counter);
+            self.game.middle_game = Some(self.move_counter as i32);
         }
     }
 }
@@ -91,9 +122,9 @@ impl AsyncVisitor for GameAnalyser {
         self.success = true;
         self.pos = Chess::default();
         self.game = Game::empty();
-        self.middle_game_start = None;
-        self.end_game_start = None;
         self.move_counter = 0;
+        self.last_score = 0;
+        self.blunders = Vec::new();
     }
 
     fn header(&mut self, key: &[u8], value: RawHeader<'_>) {
@@ -178,11 +209,25 @@ impl AsyncVisitor for GameAnalyser {
                     let score = eval_move(&self.pos, &m, &self.engine).await;
                     self.pos.play_unchecked(&m);
 
-                    if self.middle_game_start.is_none() {
+                    if self.game.middle_game.is_none() {
                         self.is_middle_game()
-                    } else if self.end_game_start.is_none() {
+                    } else if self.game.end_game.is_none() {
                         self.is_end_game();
                     }
+
+                    if self.last_score != 0 {
+                        let score_diff = self.last_score - score;
+                        let relative_score = (score as f64 / self.last_score as f64).abs();
+                        if score < 1000
+                            && (relative_score > 2.3 && score_diff.abs() > 150
+                                || relative_score < 0.5 && score_diff.abs() > 80)
+                        {
+                            //println!("{} BLUNDER {} RELATIVE SCORE {} score {} last score {}", self.move_counter, m, relative_score, score, self.last_score);
+                            self.blunders.push(self.move_counter);
+                        }
+                    }
+
+                    self.last_score = score;
                     self.game.scores.push(score.to_string());
                     self.move_counter += 1;
                 }
@@ -194,10 +239,9 @@ impl AsyncVisitor for GameAnalyser {
     }
 
     async fn end_game(&mut self) -> Self::Result {
-        println!(
-            "middle game start {:?} end game start {:?}",
-            self.middle_game_start, self.end_game_start
-        );
+        let grouped =
+            group_blunders_by_phase(&self.blunders, self.game.middle_game, self.game.end_game);
+        println!("Blunders at {:?}", grouped);
         false
     }
 }

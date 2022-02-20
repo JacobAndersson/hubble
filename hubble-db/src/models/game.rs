@@ -20,8 +20,9 @@ pub struct GameRaw {
     black: String,
     white_rating: Option<i32>,
     black_rating: Option<i32>,
-
     winner: Option<String>,
+    middle_game: Option<i32>,
+    end_game: Option<i32>
 }
 
 impl GameRaw {
@@ -49,6 +50,8 @@ impl GameRaw {
             black: self.black,
             white_rating: self.white_rating,
             black_rating: self.black_rating,
+            end_game: self.end_game,
+            middle_game: self.middle_game 
         }
     }
 }
@@ -65,6 +68,8 @@ pub struct Game {
     pub white_rating: Option<i32>,
     pub black_rating: Option<i32>,
     pub winner: Option<String>,
+    pub middle_game: Option<i32>,
+    pub end_game: Option<i32>
 }
 
 impl Game {
@@ -79,6 +84,9 @@ impl Game {
             white_rating: None,
             black_rating: None,
             winner: None,
+            middle_game: None,
+            end_game: None
+
         }
     }
 
@@ -98,6 +106,9 @@ impl Game {
             white_rating: self.white_rating,
             black_rating: self.black_rating,
             winner: self.winner,
+
+            end_game: self.end_game,
+            middle_game: self.middle_game
         }
     }
 }
