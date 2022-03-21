@@ -105,8 +105,8 @@ impl GameAnalyser {
         let pieces = board.occupied();
 
         let num_minor_major = (pieces & !kings & !pawns).count();
-        let white_backrank_count = (pieces & Bitboard::from_rank(Rank::First)).count();
-        let black_backrank_count = (pieces & Bitboard::from_rank(Rank::Eighth)).count();
+        let white_backrank_count = (pieces & Bitboard::rank(Rank::First)).count();
+        let black_backrank_count = (pieces & Bitboard::rank(Rank::Eighth)).count();
 
         if num_minor_major <= 10 || white_backrank_count < 4 || black_backrank_count < 4 {
             self.game.middle_game = Some(self.move_counter as i32);
@@ -218,11 +218,10 @@ impl AsyncVisitor for GameAnalyser {
                     if self.last_score != 0 {
                         let score_diff = self.last_score - score;
                         let relative_score = (score as f64 / self.last_score as f64).abs();
-                        if score < 1000
+                        if score.abs() > 100
                             && (relative_score > 2.3 && score_diff.abs() > 150
                                 || relative_score < 0.5 && score_diff.abs() > 80)
                         {
-                            //println!("{} BLUNDER {} RELATIVE SCORE {} score {} last score {}", self.move_counter, m, relative_score, score, self.last_score);
                             self.blunders.push(self.move_counter);
                         }
                     }

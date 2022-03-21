@@ -98,10 +98,11 @@ async fn analyse_games(pgns: String, analyser: &mut GameAnalyser) -> Vec<Game> {
 pub async fn analyse_player(
     conn: PgPooledConnection,
     player_id: &str,
+    num_games: usize
 ) -> Result<Vec<Game>, AnalysisErrors> {
     let url = format!(
-        "{}/api/games/user/{}?max=10&clocks=false&evals=false",
-        API_BASE, player_id
+        "{}/api/games/user/{}?max={}&clocks=false&evals=false",
+        API_BASE, player_id, num_games
     );
     let resp = reqwest::get(url).await.unwrap();
     println!("status code {}", resp.status());
