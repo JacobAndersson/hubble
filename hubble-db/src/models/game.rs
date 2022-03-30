@@ -22,11 +22,12 @@ pub struct GameRaw {
     black_rating: Option<i32>,
     winner: Option<String>,
     middle_game: Option<i32>,
-    end_game: Option<i32>
+    end_game: Option<i32>,
+    blunders: serde_json::Value,
 }
 
 impl GameRaw {
-    fn read_json(key: serde_json::Value) -> Vec<String> {
+    fn read_json(key: &serde_json::Value) -> Vec<String> {
         match key.get("data") {
             Some(data) => match serde_json::from_str::<Vec<String>>(&data.to_string()) {
                 Ok(s) => s,
@@ -37,8 +38,8 @@ impl GameRaw {
     }
 
     pub fn to_game(self) -> Game {
-        let scores = GameRaw::read_json(self.scores);
-        let moves = GameRaw::read_json(self.moves);
+        let scores = GameRaw::read_json(&self.scores);
+        let moves = GameRaw::read_json(&self.moves);
 
         Game {
             id: self.id,
@@ -51,7 +52,25 @@ impl GameRaw {
             white_rating: self.white_rating,
             black_rating: self.black_rating,
             end_game: self.end_game,
-            middle_game: self.middle_game 
+            middle_game: self.middle_game,
+            blunders: serde_json::from_value(self.blunders).expect("Could not parse blunders from database"),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct Blunders {
+    pub opening: Vec<i32>,
+    pub middle_game: Vec<i32>,
+    pub end_game: Vec<i32>
+}
+
+impl Blunders {
+    pub fn empty() -> Blunders {
+        Blunders {
+            opening: Vec::new(),
+            middle_game: Vec::new(),
+            end_game: Vec::new(),
         }
     }
 }
@@ -69,7 +88,8 @@ pub struct Game {
     pub black_rating: Option<i32>,
     pub winner: Option<String>,
     pub middle_game: Option<i32>,
-    pub end_game: Option<i32>
+    pub end_game: Option<i32>,
+    pub blunders:  Blunders
 }
 
 impl Game {
@@ -85,8 +105,8 @@ impl Game {
             black_rating: None,
             winner: None,
             middle_game: None,
-            end_game: None
-
+            end_game: None,
+            blunders: Blunders::empty()
         }
     }
 
@@ -108,7 +128,8 @@ impl Game {
             winner: self.winner,
 
             end_game: self.end_game,
-            middle_game: self.middle_game
+            middle_game: self.middle_game,
+            blunders: serde_json::to_value(self.blunders).expect("Could not deserilize blunders to json"),
         }
     }
 }

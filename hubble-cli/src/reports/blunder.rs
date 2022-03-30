@@ -10,14 +10,22 @@ fn convert_to_string(input: Option<i32>) -> String {
 
 pub fn blunder_report(games: Vec<Game> ) -> Table {
     let mut table = Table::new(); 
-    table.set_header(vec!["id", "middle game", "end game"]);
+    table.set_header(vec!["id", "middle game start", "end game start", "blunders opening", "blunders middle game", "blunders end game", "total number blunders"]);
 
     for game in games {
-        println!("{:?}", game);
+        let opening = game.blunders.opening.len();
+        let middle_game = game.blunders.middle_game.len();
+        let end_game = game.blunders.end_game.len();
+        let tot = opening + middle_game + end_game;
+
         table.add_row(vec![
             game.id,
             convert_to_string(game.middle_game),
-            convert_to_string(game.end_game)
+            convert_to_string(game.end_game),
+            opening.to_string(),
+            middle_game.to_string(),
+            end_game.to_string(),
+            tot.to_string()
         ]);
     }
 

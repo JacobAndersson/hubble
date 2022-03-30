@@ -11,6 +11,7 @@ table! {
         winner -> Nullable<Varchar>,
         middle_game -> Nullable<Int4>,
         end_game -> Nullable<Int4>,
+        blunders -> Jsonb,
     }
 }
 
@@ -26,8 +27,7 @@ table! {
 table! {
     users (id) {
         id -> Varchar,
-        title -> Nullable<Varchar>,
-        username -> Varchar,
+        rating -> Nullable<Int4>,
     }
 }
 

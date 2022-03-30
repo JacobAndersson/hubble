@@ -1,11 +1,10 @@
 use async_trait::async_trait;
-use hubble_db::models::game::Game;
+use hubble_db::models::game::{Game, Blunders};
 use pgn_reader::{AsyncVisitor, RawHeader, SanPlus, Skip};
 use shakmaty::Rank;
 use shakmaty::{
     bitboard::Bitboard, fen::Fen, uci::Uci, CastlingMode, Chess, Move, Position, Setup,
 };
-use std::collections::HashMap;
 use std::sync::Arc;
 use uciengine::analysis::Score;
 use uciengine::uciengine::{GoJob, UciEngine};
@@ -33,34 +32,24 @@ pub async fn eval_move(pos: &Chess, m: &Move, engine: &Arc<UciEngine>) -> i32 {
     }
 }
 
-#[derive(Hash, PartialEq, std::cmp::Eq, Debug)]
-enum GamePhases {
-    Opening,
-    MiddleGame,
-    EndGame,
-}
-
 fn group_blunders_by_phase(
     blunders: &Vec<usize>,
     middle_game: Option<i32>,
     end_game: Option<i32>,
-) -> HashMap<GamePhases, Vec<&usize>> {
-    let mut grouped = HashMap::from([
-        (GamePhases::Opening, Vec::new()),
-        (GamePhases::MiddleGame, Vec::new()),
-        (GamePhases::EndGame, Vec::new()),
-    ]);
+) -> Blunders { 
+    let mut grouped_blunders = Blunders::empty();
 
     for idx in blunders {
         if Some(*idx as i32) < middle_game {
-            grouped.get_mut(&GamePhases::Opening).unwrap().push(idx);
+            grouped_blunders.opening.push(*idx as i32);
         } else if Some(*idx as i32) >= middle_game && Some(*idx as i32) < end_game {
-            grouped.get_mut(&GamePhases::MiddleGame).unwrap().push(idx);
+            grouped_blunders.middle_game.push(*idx as i32);
         } else {
-            grouped.get_mut(&GamePhases::EndGame).unwrap().push(idx);
+            grouped_blunders.end_game.push(*idx as i32);
         }
     }
-    grouped
+
+    grouped_blunders
 }
 
 pub struct GameAnalyser {
@@ -105,8 +94,8 @@ impl GameAnalyser {
         let pieces = board.occupied();
 
         let num_minor_major = (pieces & !kings & !pawns).count();
-        let white_backrank_count = (pieces & Bitboard::rank(Rank::First)).count();
-        let black_backrank_count = (pieces & Bitboard::rank(Rank::Eighth)).count();
+        let white_backrank_count = (pieces & Bitboard::from_rank(Rank::First)).count();
+        let black_backrank_count = (pieces & Bitboard::from_rank(Rank::Eighth)).count();
 
         if num_minor_major <= 10 || white_backrank_count < 4 || black_backrank_count < 4 {
             self.game.middle_game = Some(self.move_counter as i32);
@@ -241,6 +230,7 @@ impl AsyncVisitor for GameAnalyser {
         let grouped =
             group_blunders_by_phase(&self.blunders, self.game.middle_game, self.game.end_game);
         println!("Blunders at {:?}", grouped);
+        self.game.blunders = grouped;
         false
     }
 }
